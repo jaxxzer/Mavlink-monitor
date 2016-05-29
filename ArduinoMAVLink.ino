@@ -49,7 +49,7 @@ void loop() {
 
   uint16_t voltages[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   
-  mavlink_msg_battery_status_pack(253, 111, &msg, 2, 1, 1, 1, voltages, 1, 1, 1, 1);
+  mavlink_msg_battery_status_pack(253, 1, &msg, 1, 1, 1, 1, voltages, 1, 1, 1, 1);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 
@@ -65,8 +65,28 @@ void loop() {
   //                 uint16_t Vcc, uint16_t Vservo, uint16_t flags)
 
 
-  mavlink_msg_power_status_pack(253, 111, &msg,
-                   12, 0, 0);
+  mavlink_msg_power_status_pack(253, 1, &msg,
+                   1254, 59, 4);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+
+  ////////////////////
+  //System Status test
+  //////////////////////
+
+  //https://pixhawk.ethz.ch/mavlink/#SYS_STATUS
+
+//  static inline uint16_t mavlink_msg_sys_status_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+//                   uint32_t onboard_control_sensors_present, uint32_t onboard_control_sensors_enabled, 
+//                   uint32_t onboard_control_sensors_health, uint16_t load, uint16_t voltage_battery, int16_t current_battery, 
+//                   int8_t battery_remaining, uint16_t drop_rate_comm, uint16_t errors_comm, uint16_t errors_count1, 
+//                   uint16_t errors_count2, uint16_t errors_count3, uint16_t errors_count4)
+
+  mavlink_msg_sys_status_pack(253, 1, &msg,
+                   1, 1, 
+                   1, 100, 1260, 4,
+                   30, 0, 0, 0,
+                   0, 0, 0);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 
