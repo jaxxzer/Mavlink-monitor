@@ -172,9 +172,9 @@ typedef struct __mavlink_message_info {
 
 typedef enum {
     MAVLINK_COMM_0,
-    MAVLINK_COMM_1,
-    MAVLINK_COMM_2,
-    MAVLINK_COMM_3
+    //MAVLINK_COMM_1,
+    //MAVLINK_COMM_2,
+    //MAVLINK_COMM_3
 } mavlink_channel_t;
 
 /*
