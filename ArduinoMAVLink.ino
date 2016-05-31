@@ -2,6 +2,8 @@
 #include "mavlink.h"// Mavlink interface
 #include "protocol.h"
 
+//#include <EEPROMex.h>
+
 #include "mavlink_helpers.h"
 
 #define ADC_VOLTAGE A0
@@ -10,6 +12,15 @@
 #define SYSID 3
 #define COMPID 1
 
+
+#define ADD_VSCALE 0*4
+#define ADD_CSCALE 1*4
+
+uint32_t last1Hz = 0;
+uint32_t last5Hz = 200;
+uint32_t last10Hz = 400;
+float VSCALE = 1580;
+float CSCALE = 1;
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
@@ -22,12 +33,13 @@ void setup() {
     delay(100);
   }
 
+  send_text("Online");
+  char buf[10];
+  itoa(VSCALE, buf, 10);
+  send_text(buf);
+
 }
-uint32_t last1Hz = 0;
-uint32_t last5Hz = 200;
-uint32_t last10Hz = 400;
-uint16_t VSCALE = 1672;
-uint16_t CSCALE = 100;
+
 
 void loop() {
 
@@ -128,7 +140,7 @@ void comm_receive() {
 	        break;
           
           case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
-            digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+            //digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
             send_params();
           }
           break;
@@ -142,11 +154,7 @@ void comm_receive() {
               //works//digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
             }
               VSCALE = in.param_value;
-              for(int i = 0; i < VSCALE; i++) {
-                digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-                delay(500);
-              }
-            
+              //EEPROM.writeFloat(ADD_VSCALE, VSCALE);      
           }
           break;
           
@@ -234,11 +242,25 @@ void send_params() {
   mavlink_message_t msg; 
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 
-  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "VMULT", (float)VSCALE, MAV_PARAM_TYPE_UINT16, 1, 0);
+  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "VMULT", VSCALE, MAV_PARAM_TYPE_REAL32, 1, 0);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 
   Serial.write(buf, len);
 
   
+}
+
+void send_text(char* text) {
+
+//static inline uint16_t mavlink_msg_statustext_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+//                   uint8_t severity, const char *text)
+
+  mavlink_message_t msg; 
+  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+  
+  mavlink_msg_statustext_pack(SYSID, COMPID, &msg, MAV_SEVERITY_INFO, text);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+  Serial.write(buf, len);
 }
 
