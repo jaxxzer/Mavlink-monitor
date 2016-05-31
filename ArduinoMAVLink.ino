@@ -2,7 +2,27 @@
 #include "mavlink.h"// Mavlink interface
 #include "protocol.h"
 
-//#include <EEPROMex.h>
+
+#include <EEPROM.h>
+#include <Arduino.h>  // for type definitions
+
+template <class T> int EEPROM_writeAnything(int ee, const T& value)
+{
+    const byte* p = (const byte*)(const void*)&value;
+    unsigned int i;
+    for (i = 0; i < sizeof(value); i++)
+          EEPROM.write(ee++, *p++);
+    return i;
+}
+
+template <class T> int EEPROM_readAnything(int ee, T& value)
+{
+    byte* p = (byte*)(void*)&value;
+    unsigned int i;
+    for (i = 0; i < sizeof(value); i++)
+          *p++ = EEPROM.read(ee++);
+    return i;
+}
 
 #include "mavlink_helpers.h"
 
@@ -22,16 +42,20 @@ uint32_t last10Hz = 400;
 float VSCALE = 1580;
 float CSCALE = 1;
 
+
+
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
   digitalWrite(LED_BUILTIN, HIGH);
+  
 
 	Serial.begin(115200);
-
+  EEPROM_readAnything(ADD_VSCALE, VSCALE);
   for(int i = 0; i < 5; i++) {
     send_params();
     delay(100);
   }
+
 
   send_text("Online");
   char buf[10];
@@ -40,10 +64,9 @@ void setup() {
 
 }
 
-
 void loop() {
 
-
+  
   uint32_t tnow = millis();
 
   // 1Hz loop
@@ -154,7 +177,8 @@ void comm_receive() {
               //works//digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
             }
               VSCALE = in.param_value;
-              //EEPROM.writeFloat(ADD_VSCALE, VSCALE);      
+              EEPROM_writeAnything(ADD_VSCALE, VSCALE);
+              //EEPROM.writeFloat(ADD_EEPROM + ADD_VSCALE, VSCALE);      
           }
           break;
           
