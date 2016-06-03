@@ -1,11 +1,37 @@
 // Arduino MAVLink test code.
+#ifdef __AVR__
+  #include "avr/pgmspace.h"
+#else
+  #include <itoa.h>
+#endif
+
 #include "mavlink.h"// Mavlink interface
 #include "protocol.h"
 #include "mavlink_helpers.h"
 
 
+
 #include <EEPROM.h>
 #include <Arduino.h>  // for type definitions
+
+//#include <Wire.h>
+
+
+
+typedef struct {
+  char                id[16];
+  uint8_t             index;
+  uint8_t             ADDRESS;
+  MAV_PARAM_TYPE      param_type = MAV_PARAM_TYPE_REAL32;
+  float               value;
+} Param;
+
+typedef enum PARAMS {
+  VMULT,
+  CMULT
+} PARAMS;
+
+
 
 template <class T> int EEPROM_writeAnything(int ee, const T& value)
 {
@@ -25,10 +51,16 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
     return i;
 }
 
-
-
-#define ADC_VOLTAGE A0
-#define ADC_CURRENT A1
+//Pin mappings
+#ifdef __AVR__
+  #define ADC_VOLTAGE A0
+  #define ADC_CURRENT A1
+  #define PIN_LED LED_BUILTIN
+#else //STM32F103 devices
+  #define ADC_VOLTAGE PA0
+  #define ADC_CURRENT PA1
+  #define PIN_LED PB1
+#endif
 
 #define SYSID 3
 #define COMPID 1
@@ -50,6 +82,11 @@ uint32_t last10Hz = 400;
 uint8_t cells = 3;
 float VSCALE = 1580;
 float CSCALE = 1;
+
+
+
+Param V_MULT;
+Param C_MULT;
 
 #define CELL_VMAX 4200.0
 #define CELL_VMIN 3500.0
@@ -81,8 +118,8 @@ void setup() {
   itoa(cells, buf, 10);
   send_text(buf);
 
-  pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
-  digitalWrite(LED_BUILTIN, HIGH);
+  pinMode(PIN_LED, OUTPUT);     // Initialize the PIN_LED pin as an output
+  digitalWrite(PIN_LED, HIGH);
 
 }
 
@@ -131,13 +168,13 @@ void comm_receive() {
  			switch(msg.msgid) {
         case MAVLINK_MSG_ID_HEARTBEAT: {
           if(msg.sysid == 252) {
-            digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+            digitalWrite(PIN_LED, !digitalRead(PIN_LED));
           }
         	
         } break;
         
         case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
-          digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+          digitalWrite(PIN_LED, !digitalRead(PIN_LED));
           send_params();
         } break;
   
@@ -149,7 +186,7 @@ void comm_receive() {
           if(in.target_system == SYSID && in.target_component == COMPID) {
             
             if(strncmp("VSCALE", in.param_id, 6) == 0) {
-              digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+              digitalWrite(PIN_LED, !digitalRead(PIN_LED));
               VSCALE = in.param_value;
               EEPROM_writeAnything(ADD_VSCALE, VSCALE);
             } else if(strncmp("CSCALE", in.param_id, 6) == 0) {

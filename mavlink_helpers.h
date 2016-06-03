@@ -249,8 +249,13 @@ MAVLINK_HELPER uint8_t mavlink_frame_char_buffer(mavlink_message_t* rxmsg,
 	*/
 #if MAVLINK_CRC_EXTRA
 #ifndef MAVLINK_MESSAGE_CRC
-	static const uint8_t mavlink_message_crcs[256] PROGMEM = MAVLINK_MESSAGE_CRCS;
-#define MAVLINK_MESSAGE_CRC(msgid) pgm_read_byte(&mavlink_message_crcs[msgid])
+  #ifdef __AVR__
+	  static const uint8_t mavlink_message_crcs[256] PROGMEM = MAVLINK_MESSAGE_CRCS;
+    #define MAVLINK_MESSAGE_CRC(msgid) pgm_read_byte(&mavlink_message_crcs[msgid])
+  #else
+    static const uint8_t mavlink_message_crcs[256] = MAVLINK_MESSAGE_CRCS;
+    #define MAVLINK_MESSAGE_CRC(msgid) mavlink_message_crcs[msgid]
+  #endif
 #endif
 #endif
 
@@ -262,8 +267,13 @@ MAVLINK_HELPER uint8_t mavlink_frame_char_buffer(mavlink_message_t* rxmsg,
 	*/
 #ifdef MAVLINK_CHECK_MESSAGE_LENGTH
 #ifndef MAVLINK_MESSAGE_LENGTH
-	static const uint8_t mavlink_message_lengths[256] PROGMEM = MAVLINK_MESSAGE_LENGTHS;
-#define MAVLINK_MESSAGE_LENGTH(msgid) pgm_read_byte(&mavlink_message_lengths[msgid])
+  #ifdef __AVR__
+	  static const uint8_t mavlink_message_lengths[256] PROGMEM = MAVLINK_MESSAGE_LENGTHS;
+    #define MAVLINK_MESSAGE_LENGTH(msgid) pgm_read_byte(&mavlink_message_lengths[msgid])
+  #else
+    static const uint8_t mavlink_message_lengths[256] = MAVLINK_MESSAGE_LENGTHS;
+    #define MAVLINK_MESSAGE_LENGTH(msgid) mavlink_message_lengths[msgid]
+  #endif
 #endif
 #endif
 
