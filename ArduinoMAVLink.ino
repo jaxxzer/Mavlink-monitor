@@ -1,6 +1,7 @@
 // Arduino MAVLink test code.
 #include "mavlink.h"// Mavlink interface
 #include "protocol.h"
+#include "mavlink_helpers.h"
 
 
 #include <EEPROM.h>
@@ -24,7 +25,7 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
     return i;
 }
 
-#include "mavlink_helpers.h"
+
 
 #define ADC_VOLTAGE A0
 #define ADC_CURRENT A1
@@ -33,45 +34,66 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 #define COMPID 1
 
 
-#define ADD_VSCALE 0*4
-#define ADD_CSCALE 1*4
+#define ADD_VSCALE 0 * sizeof(float)
+#define ADD_CSCALE 1 * sizeof(float)
 
+#define ID_VSCALE 0
+#define ID_CSCALE 1
+
+#define NUM_PARAMS 2
+
+uint16_t looptime = 0;
 uint32_t last1Hz = 0;
 uint32_t last5Hz = 200;
 uint32_t last10Hz = 400;
+
+uint8_t cells = 3;
 float VSCALE = 1580;
 float CSCALE = 1;
 
+#define CELL_VMAX 4200.0
+#define CELL_VMIN 3500.0
 
 
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
-  digitalWrite(LED_BUILTIN, HIGH);
-  
-
-	Serial.begin(115200);
   EEPROM_readAnything(ADD_VSCALE, VSCALE);
+  EEPROM_readAnything(ADD_CSCALE, CSCALE);
+
+  Serial.begin(115200);
+  
   for(int i = 0; i < 5; i++) {
     send_params();
-    delay(100);
+    delay(20);
+  }
+  
+  uint16_t voltage = measureVoltage();
+  if(voltage < 9000) {
+    cells = 2;
+  } else if(voltage < 13000) {
+    cells = 3;
+  } else {
+    cells = 4;
   }
 
-
   send_text("Online");
+
   char buf[10];
-  itoa(VSCALE, buf, 10);
+  itoa(cells, buf, 10);
   send_text(buf);
+
+  pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
+  digitalWrite(LED_BUILTIN, HIGH);
 
 }
 
 void loop() {
-
-  
+  uint32_t tnowus = micros();
   uint32_t tnow = millis();
 
   // 1Hz loop
   if(tnow - last1Hz > 1000) {
     last1Hz = tnow;
+
     send_heartbeat();
     send_system_status(); 
   }
@@ -80,62 +102,17 @@ void loop() {
   if(tnow - last5Hz > 5000) {
     last5Hz = tnow;
     
-    //send_params();
   }
 
   // 10Hz loop
   if(tnow - last10Hz > 10000) {
     last10Hz = tnow;
     
-    //send_params();
   }
- 
-/*
-  ////////////////////
-  //Battery status test
-  //////////////////////
-
-
-
-  //Arduino/ArduinoMAVLink/common
-
-
- //static inline uint16_t mavlink_msg_battery_status_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
- //                 uint8_t id, uint8_t battery_function, uint8_t type, int16_t temperature, const uint16_t *voltages, int16_t current_battery, int32_t current_consumed, int32_t energy_consumed, int8_t battery_remaining)
-
-  uint16_t voltages[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   
-  mavlink_msg_battery_status_pack(2, 1, &msg, 1, 1, 1, 1, voltages, 1, 1, 1, 1);
-  len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial.write(buf, len);
-
-  ////////////////////
-  //Power Status test
-  //////////////////////
-
-
-  //Arduino/ArduinoMAVLink/common/mavlink_msg_power_status.h
-
-
-  //static inline uint16_t mavlink_msg_power_status_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-  //                 uint16_t Vcc, uint16_t Vservo, uint16_t flags)
-
-
-  mavlink_msg_power_status_pack(2, 1, &msg,
-                   1254, 59, 4);
-  len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial.write(buf, len);
-*/
-/*
-
-
-
-
-*/
-  
-
   comm_receive();
-  
+
+  looptime = micros() - tnowus;
 }
 
 void comm_receive() { 
@@ -146,62 +123,58 @@ void comm_receive() {
 	while(Serial.available() > 0) { 
 		uint8_t c = Serial.read();
 
-
 		//try to get a new message 
 		if(mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)) { 
       //Got a valid message
       
-
 			// Handle message
  			switch(msg.msgid) {
-	        case MAVLINK_MSG_ID_HEARTBEAT: {
-            if(msg.sysid == 252) {
-              digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-            }
-	        	
-	        }
-	        break;
-          
-          case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
-            //digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-            send_params();
+        case MAVLINK_MSG_ID_HEARTBEAT: {
+          if(msg.sysid == 252) {
+            digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
           }
-          break;
-
-          //https://pixhawk.ethz.ch/mavlink/#PARAM_SET
-          case MAVLINK_MSG_ID_PARAM_SET: {
-
-            mavlink_param_set_t in;
-            mavlink_msg_param_set_decode(&msg, &in);
-            if(in.target_system == SYSID && in.target_component == COMPID) {
-              //works//digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-            }
+        	
+        } break;
+        
+        case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
+          digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+          send_params();
+        } break;
+  
+        //https://pixhawk.ethz.ch/mavlink/#PARAM_SET
+        case MAVLINK_MSG_ID_PARAM_SET: {
+  
+          mavlink_param_set_t in;
+          mavlink_msg_param_set_decode(&msg, &in);
+          if(in.target_system == SYSID && in.target_component == COMPID) {
+            
+            if(strncmp("VSCALE", in.param_id, 6) == 0) {
+              digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
               VSCALE = in.param_value;
               EEPROM_writeAnything(ADD_VSCALE, VSCALE);
-              //EEPROM.writeFloat(ADD_EEPROM + ADD_VSCALE, VSCALE);      
+            } else if(strncmp("CSCALE", in.param_id, 6) == 0) {
+              CSCALE = in.param_value;
+              EEPROM_writeAnything(ADD_CSCALE, CSCALE);
+            }
           }
-          break;
-          
-  				default:
-  					//Do nothing
-  				break;
+        } break;  
 			}
 		} 
-    
 		// And get the next one
 	}
- 
 }
 
 uint16_t measureVoltage() {
-  uint32_t v = analogRead(ADC_VOLTAGE);
+  float v = analogRead(ADC_VOLTAGE);
+  v = analogRead(ADC_VOLTAGE);
   v = v * VSCALE * 10 / 360;
   return (uint16_t)v;
 }
 uint16_t measureCurrent() {
-  uint16_t c = analogRead(ADC_CURRENT);
-  //c = map(c, 0, 1023, 0, 9000);
-  return c;
+  float c = analogRead(ADC_CURRENT);
+  c = analogRead(ADC_CURRENT);
+  c = c * CSCALE * 10 / 360;
+  return (int16_t)c;
 }
 
 void send_heartbeat() {
@@ -247,14 +220,15 @@ void send_system_status() {
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
   uint16_t voltage = measureVoltage();
-  delay(500);
+  delay(1); // Delay for ADC recovery
   uint16_t current = measureCurrent();
-
-
+      
+  float percent_remaining = (100 * (voltage - (cells * CELL_VMIN))) / (cells * (CELL_VMAX - CELL_VMIN));
+  
   mavlink_msg_sys_status_pack(SYSID, COMPID, &msg,
                    1, 1, 
-                   1, 100, voltage, current,
-                   30, 0, 0, 0,
+                   1, 1, voltage, current,
+                   (int8_t)percent_remaining, 0, 0, 0,
                    0, 0, 0);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
@@ -265,10 +239,17 @@ void send_params() {
   //                   const char *param_id, float param_value, uint8_t param_type, uint16_t param_count, uint16_t param_index)
   mavlink_message_t msg; 
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+  uint16_t len;
 
-  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "VMULT", VSCALE, MAV_PARAM_TYPE_REAL32, 1, 0);
-  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "VSCALE", VSCALE, MAV_PARAM_TYPE_REAL32, NUM_PARAMS, ID_VSCALE);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
 
+  Serial.write(buf, len);
+
+  
+  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "CSCALE", CSCALE, MAV_PARAM_TYPE_REAL32, NUM_PARAMS, ID_CSCALE);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  
   Serial.write(buf, len);
 
   
@@ -276,15 +257,48 @@ void send_params() {
 
 void send_text(char* text) {
 
-//static inline uint16_t mavlink_msg_statustext_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-//                   uint8_t severity, const char *text)
-
   mavlink_message_t msg; 
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
   mavlink_msg_statustext_pack(SYSID, COMPID, &msg, MAV_SEVERITY_INFO, text);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 
+  Serial.write(buf, len);
+}
+
+void send_battery_status() {
+  ////////////////////
+  //Battery status 
+  //////////////////////
+  
+  //static inline uint16_t mavlink_msg_battery_status_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+  //                 uint8_t id, uint8_t battery_function, uint8_t type, int16_t temperature, const uint16_t *voltages, int16_t current_battery, int32_t current_consumed, int32_t energy_consumed, int8_t battery_remaining)
+
+  mavlink_message_t msg; 
+  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+  uint16_t voltages[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  
+  mavlink_msg_battery_status_pack(SYSID, COMPID, &msg, 1, 1, 1, 1, voltages, 1, 1, 1, 1);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
+void send_power_status() {
+  ////////////////////
+  //Power Status
+  //////////////////////
+
+  //Arduino/ArduinoMAVLink/common/mavlink_msg_power_status.h
+
+  //static inline uint16_t mavlink_msg_power_status_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+  //                 uint16_t Vcc, uint16_t Vservo, uint16_t flags)
+
+  mavlink_message_t msg; 
+  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+  
+  mavlink_msg_power_status_pack(2, 1, &msg,
+                   1254, 59, 4);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 }
 
