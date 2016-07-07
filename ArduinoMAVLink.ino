@@ -1,8 +1,6 @@
 // Arduino MAVLink test code.
 #ifdef __AVR__
   #include "avr/pgmspace.h"
-#else
-  #include <itoa.h>
 #endif
 
 #include "mavlink.h"// Mavlink interface
@@ -14,7 +12,6 @@
 #include <EEPROM.h>
 #include <Arduino.h>  // for type definitions
 
-//#include <Wire.h>
 
 
 
@@ -56,13 +53,20 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
   #define ADC_VOLTAGE A0
   #define ADC_CURRENT A1
   #define PIN_LED LED_BUILTIN
-#else //STM32F103 devices
-  #define ADC_VOLTAGE PA0
-  #define ADC_CURRENT PA1
-  #define PIN_LED PB1
+#else//STM32F103 devices
+  #ifdef ESP8266
+    #define ADC_VOLTAGE A0
+    #define ADC_CURRENT A0
+    #define PIN_LED LED_BUILTIN
+  #else
+    #define ADC_VOLTAGE PA0
+    #define ADC_CURRENT PA1
+    //#define PIN_LED PC13 Generic STMF103
+    #define PIN_LED 33
+  #endif
 #endif
 
-#define SYSID 3
+#define SYSID 4
 #define COMPID 1
 
 
@@ -75,9 +79,11 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 #define NUM_PARAMS 2
 
 uint16_t looptime = 0;
+uint32_t lastus = 0;
 uint32_t last1Hz = 0;
 uint32_t last5Hz = 200;
 uint32_t last10Hz = 400;
+uint32_t last50Hz = 600;
 
 uint8_t cells = 3;
 float VSCALE = 1580;
@@ -93,15 +99,28 @@ Param C_MULT;
 
 
 void setup() {
+  delay(3000);
+  Serial.flush();
+
   EEPROM_readAnything(ADD_VSCALE, VSCALE);
   EEPROM_readAnything(ADD_CSCALE, CSCALE);
 
-  Serial.begin(115200);
-  
-  for(int i = 0; i < 5; i++) {
-    send_params();
-    delay(20);
-  }
+#ifdef __AVR__
+  Serial.begin(115200); // PA9 and PA10 on STM32F103C
+#else
+  #ifdef ESP8266
+    Serial.begin(115200);
+    Serial.flush();
+    Serial.swap();
+    Serial.flush();
+  #else
+    Serial.begin(115200); //maple mini
+  #endif
+#endif
+//  for(int i = 0; i < 5; i++) {
+//    send_params();
+//    delay(20);
+//  }
   
   uint16_t voltage = measureVoltage();
   if(voltage < 9000) {
@@ -114,42 +133,51 @@ void setup() {
 
   send_text("Online");
 
-  char buf[10];
-  itoa(cells, buf, 10);
-  send_text(buf);
+//  char buf[10];
+//  itoa(cells, buf, 10);
+//  send_text(buf);
 
   pinMode(PIN_LED, OUTPUT);     // Initialize the PIN_LED pin as an output
   digitalWrite(PIN_LED, HIGH);
-
+  Serial.flush();
 }
 
 void loop() {
   uint32_t tnowus = micros();
   uint32_t tnow = millis();
+  
+  looptime = tnowus - lastus;
+  lastus = tnowus;
+
 
   // 1Hz loop
-  if(tnow - last1Hz > 1000) {
+  if(tnow - last1Hz > 1000/1) {
+    digitalWrite(PIN_LED, !digitalRead(PIN_LED));
     last1Hz = tnow;
 
     send_heartbeat();
-    send_system_status(); 
+     
   }
 
   // 5Hz loop
-  if(tnow - last5Hz > 5000) {
+  if(tnow - last5Hz > 1000/5) {
     last5Hz = tnow;
+    send_system_status();
     
   }
 
   // 10Hz loop
-  if(tnow - last10Hz > 10000) {
+  if(tnow - last10Hz > 1000/10) {
     last10Hz = tnow;
     
   }
+
+  if(tnow - last50Hz > 1000/50) {
+    last50Hz = tnow;
+  
+  }
   
   comm_receive();
-
-  looptime = micros() - tnowus;
 }
 
 void comm_receive() { 
@@ -169,6 +197,7 @@ void comm_receive() {
         case MAVLINK_MSG_ID_HEARTBEAT: {
           if(msg.sysid == 252) {
             digitalWrite(PIN_LED, !digitalRead(PIN_LED));
+            //delay(100);
           }
         	
         } break;
@@ -257,15 +286,14 @@ void send_system_status() {
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
   uint16_t voltage = measureVoltage();
-  delay(1); // Delay for ADC recovery
   uint16_t current = measureCurrent();
       
   float percent_remaining = (100 * (voltage - (cells * CELL_VMIN))) / (cells * (CELL_VMAX - CELL_VMIN));
   
   mavlink_msg_sys_status_pack(SYSID, COMPID, &msg,
-                   1, 1, 
-                   1, 1, voltage, current,
-                   (int8_t)percent_remaining, 0, 0, 0,
+                   looptime, 1, 
+                   1, looptime, voltage, current,
+                   (int8_t)percent_remaining, looptime, 0, 0,
                    0, 0, 0);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
