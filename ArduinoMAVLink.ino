@@ -3,6 +3,13 @@
   #include "avr/pgmspace.h"
 #endif
 
+#define ENABLED true
+#define DISABLED false
+
+#define RANGE_ENABLED ENABLED
+#define RANGER MAXBOTIX
+//#define RANGER PING
+
 #include "mavlink.h"// Mavlink interface
 #include "protocol.h"
 #include "mavlink_helpers.h"
@@ -66,7 +73,7 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
   #endif
 #endif
 
-#define SYSID 4
+#define SYSID 2
 #define COMPID 1
 
 
@@ -97,6 +104,17 @@ Param C_MULT;
 #define CELL_VMAX 4200.0
 #define CELL_VMIN 3500.0
 
+#if RANGE_ENABLED
+#if RANGER == MAXBOTIX
+  #define PIN_RANGE_PWM 3
+#else
+  #define PIN_TRIGGER 3
+  #define PIN_ECHO 4
+#endif
+#endif
+
+
+
 
 void setup() {
   delay(3000);
@@ -104,6 +122,17 @@ void setup() {
 
   EEPROM_readAnything(ADD_VSCALE, VSCALE);
   EEPROM_readAnything(ADD_CSCALE, CSCALE);
+
+#if RANGE_ENABLED
+ #if RANGER == MAXBOTIX
+  pinMode(PIN_RANGE_PWM, INPUT);
+ #else
+  pinMode(PIN_TRIGGER, OUTPUT);
+  pinMode(PIN_ECHO, INPUT);
+ #endif
+#endif
+
+
 
 #ifdef __AVR__
   Serial.begin(115200); // PA9 and PA10 on STM32F103C
@@ -142,6 +171,8 @@ void setup() {
   Serial.flush();
 }
 
+
+
 void loop() {
   uint32_t tnowus = micros();
   uint32_t tnow = millis();
@@ -163,6 +194,19 @@ void loop() {
   if(tnow - last5Hz > 1000/5) {
     last5Hz = tnow;
     send_system_status();
+
+ #if RANGE_ENABLED
+  #if RANGER == MAXBOTIX
+    uint32_t range = pulseIn(PIN_RANGE_PWM, HIGH, 1000);
+    float cm = range / 58.0; // 58us/cm IN AIR per maxbotix datasheet for 7066
+    cm *= 1482.0/343.2; // ratio of speed of sound in water:air
+    send_distance_sensor((uint16_t)cm);
+  #else
+    uint32_t range = get_range_micros();
+    float cm = micros_to_cm(range);
+    send_distance_sensor((uint16_t)cm);
+  #endif
+ #endif
     
   }
 
@@ -178,6 +222,7 @@ void loop() {
   }
   
   comm_receive();
+  
 }
 
 void comm_receive() { 
@@ -361,9 +406,53 @@ void send_power_status() {
   mavlink_message_t msg; 
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
-  mavlink_msg_power_status_pack(2, 1, &msg,
+  mavlink_msg_power_status_pack(SYSID, COMPID, &msg,
                    1254, 59, 4);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 }
+
+void send_distance_sensor(uint16_t distance_cm) {
+  ////////////////////
+  //Power Status
+  //////////////////////
+
+  //Arduino/ArduinoMAVLink/common/mavlink_msg_distance_sensor.h
+
+  //static inline uint16_t mavlink_msg_distance_sensor_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+  //                   uint32_t time_boot_ms, uint16_t min_distance, uint16_t max_distance, uint16_t current_distance, uint8_t type, uint8_t id, uint8_t orientation, uint8_t covariance)
+
+  mavlink_message_t msg; 
+  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+  
+  mavlink_msg_distance_sensor_pack(SYSID, COMPID, &msg,
+                   0, 180, 1000, distance_cm, MAV_DISTANCE_SENSOR_ULTRASOUND, 1, MAV_SENSOR_ROTATION_PITCH_90, 0);
+                   
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
+#if RANGE_ENABLED && RANGER != MAXBOTIX
+
+uint32_t get_range_micros() {
+
+  digitalWrite(PIN_TRIGGER, LOW);
+  delayMicroseconds(2);
+  digitalWrite(PIN_TRIGGER, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(PIN_TRIGGER, LOW);
+
+  uint32_t duration = pulseIn(PIN_ECHO, HIGH);
+
+  return duration;
+}
+
+float micros_to_cm(uint32_t micros) {
+  float cm = micros;
+  cm /= 2.0; //two way trip
+  //cm = 148200.0 * (cm / 1000000.0);
+  cm = 34300 * (cm / 1000000);
+  return cm;
+}
+#endif
 
