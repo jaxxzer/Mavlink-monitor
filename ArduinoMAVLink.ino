@@ -3,23 +3,13 @@
   #include "avr/pgmspace.h"
 #endif
 
-#define ENABLED true
-#define DISABLED false
-
-#define RANGE_ENABLED ENABLED
-#define RANGER MAXBOTIX
-//#define RANGER PING
-
 #include "mavlink.h"// Mavlink interface
 #include "protocol.h"
 #include "mavlink_helpers.h"
 
 
-
 #include <EEPROM.h>
 #include <Arduino.h>  // for type definitions
-
-
 
 
 typedef struct {
@@ -34,7 +24,6 @@ typedef enum PARAMS {
   VMULT,
   CMULT
 } PARAMS;
-
 
 
 template <class T> int EEPROM_writeAnything(int ee, const T& value)
@@ -66,8 +55,8 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
     #define ADC_CURRENT A0
     #define PIN_LED LED_BUILTIN
   #else
-    #define ADC_VOLTAGE PA0
-    #define ADC_CURRENT PA1
+    #define ADC_VOLTAGE PA1
+    #define ADC_CURRENT PA0
     //#define PIN_LED PC13 Generic STMF103
     #define PIN_LED 33
   #endif
@@ -79,6 +68,8 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 
 #define ADD_VSCALE 0 * sizeof(float)
 #define ADD_CSCALE 1 * sizeof(float)
+#define ADD_SRATE1 2 * sizeof(float)
+#define ADD_SRATE2 3 * sizeof(float)
 
 #define ID_VSCALE 0
 #define ID_CSCALE 1
@@ -95,6 +86,8 @@ uint32_t last50Hz = 600;
 uint8_t cells = 3;
 float VSCALE = 1580;
 float CSCALE = 1;
+uint8_t SRATE1 = 1;
+uint8_t SRATE2 = 1;
 
 
 
@@ -104,48 +97,22 @@ Param C_MULT;
 #define CELL_VMAX 4200.0
 #define CELL_VMIN 3500.0
 
-#if RANGE_ENABLED
-#if RANGER == MAXBOTIX
-  #define PIN_RANGE_PWM 3
-#else
-  #define PIN_TRIGGER 3
-  #define PIN_ECHO 4
-#endif
-#endif
 
 
-
+float range = 0;
 
 void setup() {
-  delay(3000);
-  Serial.flush();
 
   EEPROM_readAnything(ADD_VSCALE, VSCALE);
   EEPROM_readAnything(ADD_CSCALE, CSCALE);
+  EEPROM_readAnything(ADD_SRATE1, SRATE1);
+  EEPROM_readAnything(ADD_SRATE2, SRATE2);
 
-#if RANGE_ENABLED
- #if RANGER == MAXBOTIX
-  pinMode(PIN_RANGE_PWM, INPUT);
- #else
-  pinMode(PIN_TRIGGER, OUTPUT);
-  pinMode(PIN_ECHO, INPUT);
- #endif
-#endif
-
-
-
-#ifdef __AVR__
-  Serial.begin(115200); // PA9 and PA10 on STM32F103C
-#else
-  #ifdef ESP8266
-    Serial.begin(115200);
-    Serial.flush();
-    Serial.swap();
-    Serial.flush();
-  #else
-    Serial.begin(115200); //maple mini
-  #endif
-#endif
+  //Serial.begin(115200);  //usb
+  Serial1.begin(115200); //pixhawk
+  //Serial2.begin(115200); //esp
+  Serial3.begin(115200); //rs232
+  
 //  for(int i = 0; i < 5; i++) {
 //    send_params();
 //    delay(20);
@@ -168,7 +135,6 @@ void setup() {
 
   pinMode(PIN_LED, OUTPUT);     // Initialize the PIN_LED pin as an output
   digitalWrite(PIN_LED, HIGH);
-  Serial.flush();
 }
 
 
@@ -194,25 +160,19 @@ void loop() {
   if(tnow - last5Hz > 1000/5) {
     last5Hz = tnow;
     send_system_status();
+    send_distance_sensor(range*100);
 
- #if RANGE_ENABLED
-  #if RANGER == MAXBOTIX
-    uint32_t range = pulseIn(PIN_RANGE_PWM, HIGH, 1000);
-    float cm = range / 58.0; // 58us/cm IN AIR per maxbotix datasheet for 7066
-    cm *= 1482.0/343.2; // ratio of speed of sound in water:air
-    send_distance_sensor((uint16_t)cm);
-  #else
-    uint32_t range = get_range_micros();
-    float cm = micros_to_cm(range);
-    send_distance_sensor((uint16_t)cm);
-  #endif
- #endif
+    Serial3.write('Z');
+    
+ 
+
     
   }
 
   // 10Hz loop
   if(tnow - last10Hz > 1000/10) {
     last10Hz = tnow;
+
     
   }
 
@@ -220,9 +180,51 @@ void loop() {
     last50Hz = tnow;
   
   }
-  
+
+  range_receive();
   comm_receive();
   
+}
+
+
+
+void range_receive() {
+
+  static char distance[20];
+  static uint8_t index;
+
+  while(Serial3.available() > 0) {
+    uint8_t c = Serial3.read();
+    switch(c) {
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+      case '.':
+        if(index < 19)
+          distance[index++] = c;
+        break;
+        
+      case 'm':
+        distance[index] = '\0';
+        range = String(distance).toFloat();
+      case '\r':
+      case '\n':
+        index = 0;
+        break;
+
+      default:
+        range = 0;
+        index = 0;
+        break;
+    }
+  }
 }
 
 void comm_receive() { 
@@ -230,8 +232,8 @@ void comm_receive() {
 	mavlink_status_t status;
 	
 	//receive data over Serial 
-	while(Serial.available() > 0) { 
-		uint8_t c = Serial.read();
+	while(Serial1.available() > 0) { 
+		uint8_t c = Serial1.read();
 
 		//try to get a new message 
 		if(mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)) { 
@@ -240,15 +242,13 @@ void comm_receive() {
 			// Handle message
  			switch(msg.msgid) {
         case MAVLINK_MSG_ID_HEARTBEAT: {
-          if(msg.sysid == 252) {
+
             digitalWrite(PIN_LED, !digitalRead(PIN_LED));
-            //delay(100);
-          }
+
         	
         } break;
         
         case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
-          digitalWrite(PIN_LED, !digitalRead(PIN_LED));
           send_params();
         } break;
   
@@ -266,6 +266,12 @@ void comm_receive() {
             } else if(strncmp("CSCALE", in.param_id, 6) == 0) {
               CSCALE = in.param_value;
               EEPROM_writeAnything(ADD_CSCALE, CSCALE);
+            } else if(strncmp("SRATE1", in.param_id, 6) == 0) {
+              SRATE1 = in.param_value;
+              EEPROM_writeAnything(ADD_SRATE1, SRATE1);
+            } else if(strncmp("SRATE2", in.param_id, 6) == 0) {
+              SRATE2 = in.param_value;
+              EEPROM_writeAnything(ADD_SRATE2, SRATE2);
             }
           }
         } break;  
@@ -312,7 +318,7 @@ void send_heartbeat() {
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   
   // Send the message (.write sends as bytes) 
-  Serial.write(buf, len);
+  Serial1.write(buf, len);
 }
 
 void send_system_status() {
@@ -341,7 +347,7 @@ void send_system_status() {
                    (int8_t)percent_remaining, looptime, 0, 0,
                    0, 0, 0);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial.write(buf, len);
+  Serial1.write(buf, len);
 }
 
 void send_params() {
@@ -354,13 +360,13 @@ void send_params() {
   mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "VSCALE", VSCALE, MAV_PARAM_TYPE_REAL32, NUM_PARAMS, ID_VSCALE);
   len = mavlink_msg_to_send_buffer(buf, &msg);
 
-  Serial.write(buf, len);
+  Serial1.write(buf, len);
 
   
   mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "CSCALE", CSCALE, MAV_PARAM_TYPE_REAL32, NUM_PARAMS, ID_CSCALE);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   
-  Serial.write(buf, len);
+  Serial1.write(buf, len);
 
   
 }
@@ -373,7 +379,7 @@ void send_text(char* text) {
   mavlink_msg_statustext_pack(SYSID, COMPID, &msg, MAV_SEVERITY_INFO, text);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 
-  Serial.write(buf, len);
+  Serial1.write(buf, len);
 }
 
 void send_battery_status() {
@@ -390,7 +396,7 @@ void send_battery_status() {
   
   mavlink_msg_battery_status_pack(SYSID, COMPID, &msg, 1, 1, 1, 1, voltages, 1, 1, 1, 1);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial.write(buf, len);
+  Serial1.write(buf, len);
 }
 
 void send_power_status() {
@@ -409,7 +415,7 @@ void send_power_status() {
   mavlink_msg_power_status_pack(SYSID, COMPID, &msg,
                    1254, 59, 4);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial.write(buf, len);
+  Serial1.write(buf, len);
 }
 
 void send_distance_sensor(uint16_t distance_cm) {
@@ -426,33 +432,8 @@ void send_distance_sensor(uint16_t distance_cm) {
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
   mavlink_msg_distance_sensor_pack(SYSID, COMPID, &msg,
-                   0, 180, 1000, distance_cm, MAV_DISTANCE_SENSOR_ULTRASOUND, 1, MAV_SENSOR_ROTATION_PITCH_90, 0);
+                   0, 30, 500, distance_cm, MAV_DISTANCE_SENSOR_ULTRASOUND, 1, MAV_SENSOR_ROTATION_PITCH_90, 0);
                    
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial.write(buf, len);
+  Serial1.write(buf, len);
 }
-
-#if RANGE_ENABLED && RANGER != MAXBOTIX
-
-uint32_t get_range_micros() {
-
-  digitalWrite(PIN_TRIGGER, LOW);
-  delayMicroseconds(2);
-  digitalWrite(PIN_TRIGGER, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(PIN_TRIGGER, LOW);
-
-  uint32_t duration = pulseIn(PIN_ECHO, HIGH);
-
-  return duration;
-}
-
-float micros_to_cm(uint32_t micros) {
-  float cm = micros;
-  cm /= 2.0; //two way trip
-  //cm = 148200.0 * (cm / 1000000.0);
-  cm = 34300 * (cm / 1000000);
-  return cm;
-}
-#endif
-
