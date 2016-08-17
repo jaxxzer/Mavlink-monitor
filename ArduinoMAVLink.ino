@@ -73,8 +73,10 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 
 #define ID_VSCALE 0
 #define ID_CSCALE 1
+#define ID_SRATE1 2
+#define ID_SRATE2 3
 
-#define NUM_PARAMS 2
+#define NUM_PARAMS 4
 
 uint16_t looptime = 0;
 uint32_t lastus = 0;
@@ -82,6 +84,8 @@ uint32_t last1Hz = 0;
 uint32_t last5Hz = 200;
 uint32_t last10Hz = 400;
 uint32_t last50Hz = 600;
+uint32_t lastS1 = 800;
+uint32_t lastS2 = 1000;
 
 uint8_t cells = 3;
 float VSCALE = 1580;
@@ -89,6 +93,8 @@ float CSCALE = 1;
 uint8_t SRATE1 = 1;
 uint8_t SRATE2 = 1;
 
+
+uint32_t master_time = 0;
 
 
 Param V_MULT;
@@ -100,6 +106,7 @@ Param C_MULT;
 
 
 float range = 0;
+bool water = false;
 
 void setup() {
 
@@ -135,6 +142,8 @@ void setup() {
 
   pinMode(PIN_LED, OUTPUT);     // Initialize the PIN_LED pin as an output
   digitalWrite(PIN_LED, HIGH);
+
+  pinMode(PB6, INPUT);
 }
 
 
@@ -149,12 +158,13 @@ void loop() {
 
   // 1Hz loop
   if(tnow - last1Hz > 1000/1) {
-    digitalWrite(PIN_LED, !digitalRead(PIN_LED));
+
     last1Hz = tnow;
 
     send_heartbeat();
      
   }
+
 
   // 5Hz loop
   if(tnow - last5Hz > 1000/5) {
@@ -163,14 +173,15 @@ void loop() {
     send_distance_sensor(range*100);
 
     Serial3.write('Z');
-    
- 
 
-    
+    water = digitalRead(PB6);
   }
+
+  
 
   // 10Hz loop
   if(tnow - last10Hz > 1000/10) {
+    send_heartbeat();
     last10Hz = tnow;
 
     
@@ -181,7 +192,7 @@ void loop() {
   
   }
 
-  range_receive();
+  //range_receive();
   comm_receive();
   
 }
@@ -243,9 +254,16 @@ void comm_receive() {
  			switch(msg.msgid) {
         case MAVLINK_MSG_ID_HEARTBEAT: {
 
-            digitalWrite(PIN_LED, !digitalRead(PIN_LED));
+            //digitalWrite(PIN_LED, !digitalRead(PIN_LED));
 
         	
+        } break;
+
+        case MAVLINK_MSG_ID_SYSTEM_TIME: {
+          mavlink_system_time_t in;
+          mavlink_msg_system_time_decode(&msg, &in);
+ 
+          master_time = in.time_boot_ms;
         } break;
         
         case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
@@ -300,7 +318,7 @@ void send_heartbeat() {
   //////////////////////
 
   // Define the system type (see mavlink_types.h for list of possible types) 
-  int system_type = MAV_TYPE_SUBMARINE;
+  int system_type = MAV_TYPE_GCS;
   int autopilot_type = MAV_AUTOPILOT_GENERIC;
   
   // Initialize the required buffers 
@@ -340,10 +358,11 @@ void send_system_status() {
   uint16_t current = measureCurrent();
       
   float percent_remaining = (100 * (voltage - (cells * CELL_VMIN))) / (cells * (CELL_VMAX - CELL_VMIN));
-  
+  uint32_t water_detected = water?0x20000000:0x0;
+  digitalWrite(PIN_LED, water_detected > 0);
   mavlink_msg_sys_status_pack(SYSID, COMPID, &msg,
-                   looptime, 1, 
-                   1, looptime, voltage, current,
+                   looptime, 0x20000000, 
+                   water_detected, looptime, voltage, current,
                    (int8_t)percent_remaining, looptime, 0, 0,
                    0, 0, 0);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
@@ -364,6 +383,16 @@ void send_params() {
 
   
   mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "CSCALE", CSCALE, MAV_PARAM_TYPE_REAL32, NUM_PARAMS, ID_CSCALE);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  
+  Serial1.write(buf, len);
+
+  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "SRATE1", SRATE1, MAV_PARAM_TYPE_UINT8, NUM_PARAMS, ID_SRATE1);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  
+  Serial1.write(buf, len);
+
+  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "SRATE2", SRATE2, MAV_PARAM_TYPE_UINT8, NUM_PARAMS, ID_SRATE2);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   
   Serial1.write(buf, len);
@@ -432,7 +461,7 @@ void send_distance_sensor(uint16_t distance_cm) {
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
   mavlink_msg_distance_sensor_pack(SYSID, COMPID, &msg,
-                   0, 30, 500, distance_cm, MAV_DISTANCE_SENSOR_ULTRASOUND, 1, MAV_SENSOR_ROTATION_PITCH_90, 0);
+                   master_time, 30, 500, distance_cm, MAV_DISTANCE_SENSOR_ULTRASOUND, 1, MAV_SENSOR_ROTATION_PITCH_90, 0);
                    
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial1.write(buf, len);
