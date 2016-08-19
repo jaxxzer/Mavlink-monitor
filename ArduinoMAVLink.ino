@@ -1,15 +1,14 @@
-// Arduino MAVLink test code.
-#ifdef __AVR__
-  #include "avr/pgmspace.h"
-#endif
 
-#include "mavlink.h"// Mavlink interface
-#include "protocol.h"
-#include "mavlink_helpers.h"
+#include "SUB/ardupilotmega/mavlink.h"
+#include "SUB/protocol.h"
+#include "SUB/mavlink_helpers.h"
 
 
 #include <EEPROM.h>
 #include <Arduino.h>  // for type definitions
+
+
+#define PARAM_MAX_NAME_SIZE 16
 
 
 typedef struct {
@@ -80,6 +79,8 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 
 uint16_t looptime = 0;
 uint32_t lastus = 0;
+
+uint32_t last30s = 0;
 uint32_t last1Hz = 0;
 uint32_t last5Hz = 200;
 uint32_t last10Hz = 400;
@@ -115,8 +116,8 @@ void setup() {
   EEPROM_readAnything(ADD_SRATE1, SRATE1);
   EEPROM_readAnything(ADD_SRATE2, SRATE2);
 
-  //Serial.begin(115200);  //usb
-  Serial1.begin(115200); //pixhawk
+  Serial.begin(115200);  //usb
+  Serial1.begin(921600); //pixhawk
   //Serial2.begin(115200); //esp
   Serial3.begin(115200); //rs232
   
@@ -144,6 +145,8 @@ void setup() {
   digitalWrite(PIN_LED, HIGH);
 
   pinMode(PB6, INPUT);
+
+  Serial.println("ONLINE");
 }
 
 
@@ -155,7 +158,12 @@ void loop() {
   looptime = tnowus - lastus;
   lastus = tnowus;
 
-
+  //30second loop
+  if(tnow - last30s > 1000 * 30) {
+    last30s = tnow;
+    send_request_data_stream();
+  }
+  
   // 1Hz loop
   if(tnow - last1Hz > 1000/1) {
 
@@ -207,16 +215,7 @@ void range_receive() {
   while(Serial3.available() > 0) {
     uint8_t c = Serial3.read();
     switch(c) {
-      case '0':
-      case '1':
-      case '2':
-      case '3':
-      case '4':
-      case '5':
-      case '6':
-      case '7':
-      case '8':
-      case '9':
+      case '0' ... '9':
       case '.':
         if(index < 19)
           distance[index++] = c;
@@ -238,6 +237,8 @@ void range_receive() {
   }
 }
 
+static bool connected = false;
+
 void comm_receive() { 
 	mavlink_message_t msg; 
 	mavlink_status_t status;
@@ -248,7 +249,20 @@ void comm_receive() {
 
 		//try to get a new message 
 		if(mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)) { 
+
+      if(connected == false) {
+        connected = true;
+        send_request_data_stream();
+      }
       //Got a valid message
+
+      Serial.print("Got msg ");
+      Serial.print(msg.msgid);                                   
+      Serial.print(" from ");
+      Serial.print(msg.sysid);
+      Serial.print(" , ");
+      Serial.println(msg.compid);
+
       
 			// Handle message
  			switch(msg.msgid) {
@@ -292,7 +306,33 @@ void comm_receive() {
               EEPROM_writeAnything(ADD_SRATE2, SRATE2);
             }
           }
-        } break;  
+        } break;
+
+        case MAVLINK_MSG_ID_STATUSTEXT: {
+          mavlink_statustext_t in;
+          mavlink_msg_statustext_decode(&msg, &in);
+          
+          Serial.println(in.text);
+          
+        } break;
+
+        case MAVLINK_MSG_ID_PARAM_VALUE: {
+          mavlink_param_value_t in;
+          mavlink_msg_param_value_decode(&msg, &in);
+
+          Serial.println(in.param_id);
+        } break;
+        
+        case MAVLINK_MSG_ID_MISSION_REQUEST_LIST: {
+          send_mission_count(msg.sysid, msg.compid);
+        } break;
+
+        case MAVLINK_MSG_ID_COMMAND_LONG: {
+          mavlink_command_long_t in;
+          mavlink_msg_command_long_decode(&msg, &in);
+          Serial.print("command# ");
+          Serial.println(in.command);
+        }
 			}
 		} 
 		// And get the next one
@@ -318,8 +358,8 @@ void send_heartbeat() {
   //////////////////////
 
   // Define the system type (see mavlink_types.h for list of possible types) 
-  int system_type = MAV_TYPE_GCS;
-  int autopilot_type = MAV_AUTOPILOT_GENERIC;
+  int system_type = MAV_TYPE_MONITOR;
+  int autopilot_type = MAV_AUTOPILOT_INVALID;
   
   // Initialize the required buffers 
   mavlink_message_t msg; 
@@ -466,3 +506,34 @@ void send_distance_sensor(uint16_t distance_cm) {
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial1.write(buf, len);
 }
+
+void send_request_data_stream() {
+
+  mavlink_message_t msg;
+  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+//static inline uint16_t mavlink_msg_request_data_stream_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+//                   uint8_t target_system, uint8_t target_component, uint8_t req_stream_id, uint16_t req_message_rate, uint8_t start_stop)
+
+
+  mavlink_msg_request_data_stream_pack(SYSID, COMPID, &msg,
+                     1, 1, MAV_DATA_STREAM_ALL, 0, 0);
+                     
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial1.write(buf, len);
+                       
+}
+
+void send_mission_count(uint8_t target_system, uint8_t target_component) {
+//  static inline uint16_t mavlink_msg_mission_count_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+//                   uint8_t target_system, uint8_t target_component, uint16_t count)
+  mavlink_message_t msg;
+  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+  
+  mavlink_msg_mission_count_pack(SYSID, COMPID, &msg,
+              target_system, target_component, 0);
+
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial1.write(buf, len);
+}
+
