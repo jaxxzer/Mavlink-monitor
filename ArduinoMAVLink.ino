@@ -1,84 +1,26 @@
+#include <Arduino.h>  // for type definitions (ie uint8_t)
 
 #include "SUB/ardupilotmega/mavlink.h"
-#include "SUB/protocol.h"
-#include "SUB/mavlink_helpers.h"
+//#include "SUB/protocol.h"
+//#include "SUB/mavlink_helpers.h"
 
+#include "Param.h"
 
-#include <EEPROM.h>
-#include <Arduino.h>  // for type definitions
-
-
-#define PARAM_MAX_NAME_SIZE 16
-
-
-typedef struct {
-  char                id[16];
-  uint8_t             index;
-  uint8_t             ADDRESS;
-  MAV_PARAM_TYPE      param_type = MAV_PARAM_TYPE_REAL32;
-  float               value;
-} Param;
-
-typedef enum PARAMS {
-  VMULT,
-  CMULT
-} PARAMS;
-
-
-template <class T> int EEPROM_writeAnything(int ee, const T& value)
-{
-    const byte* p = (const byte*)(const void*)&value;
-    unsigned int i;
-    for (i = 0; i < sizeof(value); i++)
-          EEPROM.write(ee++, *p++);
-    return i;
-}
-
-template <class T> int EEPROM_readAnything(int ee, T& value)
-{
-    byte* p = (byte*)(void*)&value;
-    unsigned int i;
-    for (i = 0; i < sizeof(value); i++)
-          *p++ = EEPROM.read(ee++);
-    return i;
-}
-
-//Pin mappings
-#ifdef __AVR__
-  #define ADC_VOLTAGE A0
-  #define ADC_CURRENT A1
-  #define PIN_LED LED_BUILTIN
-#else//STM32F103 devices
-  #ifdef ESP8266
-    #define ADC_VOLTAGE A0
-    #define ADC_CURRENT A0
-    #define PIN_LED LED_BUILTIN
-  #else
-    #define ADC_VOLTAGE PA1
-    #define ADC_CURRENT PA0
-    //#define PIN_LED PC13 Generic STMF103
-    #define PIN_LED 33
-  #endif
-#endif
 
 #define SYSID 2
 #define COMPID 1
 
+#define ADC_VOLTAGE PA1
+#define ADC_CURRENT PA0
+#define PIN_LED 33
 
-#define ADD_VSCALE 0 * sizeof(float)
-#define ADD_CSCALE 1 * sizeof(float)
-#define ADD_SRATE1 2 * sizeof(float)
-#define ADD_SRATE2 3 * sizeof(float)
+///////////////////////////
+/////Scheduling////////////
+///////////////////////////
+uint32_t master_time = 0;
 
-#define ID_VSCALE 0
-#define ID_CSCALE 1
-#define ID_SRATE1 2
-#define ID_SRATE2 3
-
-#define NUM_PARAMS 4
-
-uint16_t looptime = 0;
-uint32_t lastus = 0;
+uint16_t looptime = 0; // performance
+uint32_t lastus = 0; // performance
 
 uint32_t last30s = 0;
 uint32_t last1Hz = 0;
@@ -88,43 +30,65 @@ uint32_t last50Hz = 600;
 uint32_t lastS1 = 800;
 uint32_t lastS2 = 1000;
 
-uint8_t cells = 3;
+///////////////////////////
+///////PARAMETERS//////////
+///////////////////////////
+
 float VSCALE = 1580;
 float CSCALE = 1;
-uint8_t SRATE1 = 1;
-uint8_t SRATE2 = 1;
+float SRATE1 = 1;
+float SRATE2 = 1;
+float BAUD_PIX = 115200;
+float BAUD_ESP = 115200;
+float BAUD_232 = 115200;
 
+Parameters params = Parameters();
 
-uint32_t master_time = 0;
-
-
-Param V_MULT;
-Param C_MULT;
+///////////////////////////
+/////BATTERY MANAGEMENT////
+///////////////////////////
 
 #define CELL_VMAX 4200.0
 #define CELL_VMIN 3500.0
 
+uint8_t cells = 3;
 
+float vtest = 1000;
+float ctest = 321;
+
+///////////////////////////
+///////////////////////////
+///////////////////////////
 
 float range = 0;
 bool water = false;
 
 void setup() {
 
-  EEPROM_readAnything(ADD_VSCALE, VSCALE);
-  EEPROM_readAnything(ADD_CSCALE, CSCALE);
-  EEPROM_readAnything(ADD_SRATE1, SRATE1);
-  EEPROM_readAnything(ADD_SRATE2, SRATE2);
+  //SerialManager.init();
 
   Serial.begin(115200);  //usb
   Serial1.begin(921600); //pixhawk
-  //Serial2.begin(115200); //esp
+  Serial2.begin(115200); //esp
   Serial3.begin(115200); //rs232
+
+  delay(10000);
+
+
+  //params.init();
   
-//  for(int i = 0; i < 5; i++) {
-//    send_params();
-//    delay(20);
-//  }
+  params.add("VS", &vtest);
+  params.add("CS", &ctest);
+  params.add("VSCALE", &VSCALE);
+  params.add("CSCALE", &CSCALE);
+  params.add("SRATE1", &SRATE1);
+  params.add("SRATE2", &SRATE2);
+  params.add("BAUD_PIX", &BAUD_PIX);
+  params.add("BAUD_ESP", &BAUD_ESP);
+  params.add("BAUD_232", &BAUD_232);
+  
+  params.load_all();
+
   
   uint16_t voltage = measureVoltage();
   if(voltage < 9000) {
@@ -135,17 +99,13 @@ void setup() {
     cells = 4;
   }
 
-  send_text("Online");
-
-//  char buf[10];
-//  itoa(cells, buf, 10);
-//  send_text(buf);
 
   pinMode(PIN_LED, OUTPUT);     // Initialize the PIN_LED pin as an output
   digitalWrite(PIN_LED, HIGH);
 
   pinMode(PB6, INPUT);
 
+  send_text("Online");
   Serial.println("ONLINE");
 }
 
@@ -290,21 +250,10 @@ void comm_receive() {
           mavlink_param_set_t in;
           mavlink_msg_param_set_decode(&msg, &in);
           if(in.target_system == SYSID && in.target_component == COMPID) {
-            
-            if(strncmp("VSCALE", in.param_id, 6) == 0) {
-              digitalWrite(PIN_LED, !digitalRead(PIN_LED));
-              VSCALE = in.param_value;
-              EEPROM_writeAnything(ADD_VSCALE, VSCALE);
-            } else if(strncmp("CSCALE", in.param_id, 6) == 0) {
-              CSCALE = in.param_value;
-              EEPROM_writeAnything(ADD_CSCALE, CSCALE);
-            } else if(strncmp("SRATE1", in.param_id, 6) == 0) {
-              SRATE1 = in.param_value;
-              EEPROM_writeAnything(ADD_SRATE1, SRATE1);
-            } else if(strncmp("SRATE2", in.param_id, 6) == 0) {
-              SRATE2 = in.param_value;
-              EEPROM_writeAnything(ADD_SRATE2, SRATE2);
-            }
+            Serial.print("SET PARAM: ");
+            Serial.println(in.param_id);
+            param_t* param = params.set(in.param_id, in.param_value);
+            send_param(param->index);
           }
         } break;
 
@@ -416,28 +365,30 @@ void send_params() {
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   uint16_t len;
 
-  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "VSCALE", VSCALE, MAV_PARAM_TYPE_REAL32, NUM_PARAMS, ID_VSCALE);
+  for(int i = 0; i < params.num_params(); i++) {
+    param_t param = params.get(i);
+
+    mavlink_msg_param_value_pack(SYSID, COMPID, &msg, param.id, *param.value, param.type, params.num_params(), param.index);
+    len = mavlink_msg_to_send_buffer(buf, &msg);
+  
+    Serial1.write(buf, len);   
+  }
+}
+
+void send_param(uint8_t index) {
+  if(index > params.num_params())
+    return;
+
+  mavlink_message_t msg; 
+  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+  uint16_t len;
+  
+  param_t param = params.get(index);
+
+  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, param.id, *param.value, param.type, params.num_params(), param.index);
   len = mavlink_msg_to_send_buffer(buf, &msg);
-
-  Serial1.write(buf, len);
-
   
-  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "CSCALE", CSCALE, MAV_PARAM_TYPE_REAL32, NUM_PARAMS, ID_CSCALE);
-  len = mavlink_msg_to_send_buffer(buf, &msg);
-  
-  Serial1.write(buf, len);
-
-  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "SRATE1", SRATE1, MAV_PARAM_TYPE_UINT8, NUM_PARAMS, ID_SRATE1);
-  len = mavlink_msg_to_send_buffer(buf, &msg);
-  
-  Serial1.write(buf, len);
-
-  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, "SRATE2", SRATE2, MAV_PARAM_TYPE_UINT8, NUM_PARAMS, ID_SRATE2);
-  len = mavlink_msg_to_send_buffer(buf, &msg);
-  
-  Serial1.write(buf, len);
-
-  
+  Serial1.write(buf, len);   
 }
 
 void send_text(char* text) {
