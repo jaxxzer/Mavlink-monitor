@@ -1,11 +1,12 @@
 #ifndef MONITOR_H
 #define MONITOR_H
 
-#include <EEPROM.h>
 #include <Arduino.h>
 #include "MapleMini.h"
 #include "Mavlink.h"
 #include "Param.h"
+#include "Rangefinder.h"
+#include "BatteryMonitor.h"
 
     
 #define CELL_VMAX 4200.0
@@ -16,7 +17,8 @@ class Monitor {
 
     Monitor();
     Parameters params;
-    //Mavlink pixhawk;
+    Mavlink pixhawk;
+    BatteryMonitor battery;
     
     void run(void);
     void init(void);
@@ -25,8 +27,7 @@ class Monitor {
     ///////////////////////////
     ///////PARAMETERS//////////
     ///////////////////////////
-    float VSCALE;
-    float CSCALE;
+
     uint32_t SRATE1;
     uint32_t SRATE2;
     uint32_t BAUD_PIX;
@@ -50,26 +51,8 @@ class Monitor {
     uint32_t lastS1;
     uint32_t lastS2;
 
-    uint16_t measureVoltage(void);
-    uint16_t measureCurrent(void);
-    
-    
-    
-    ///////////////////////////
-    /////BATTERY MANAGEMENT////
-    ///////////////////////////
 
-    
-    uint8_t cells;
-    
 
-    
-    ///////////////////////////
-    ///////////////////////////
-    ///////////////////////////
-    
-    float range;
-    bool water;
     
   private:
   

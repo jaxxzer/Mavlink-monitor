@@ -6,12 +6,16 @@
 class Rangefinder {
   public:
 
-  Rangefinder();
-  void range_receive(void);
+    Rangefinder();
+  
+    void init(void);
+    void update(void);
+  
 
   private:
-
-  float range;
+    void range_receive(void);
+  
+    float range;
 };
 
 #endif

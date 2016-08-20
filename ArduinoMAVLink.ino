@@ -1,14 +1,4 @@
-#include <EEPROM.h>
-#include <Arduino.h>  // for type definitions (ie uint8_t)
-#include "MapleMini.h" // board pinout definition
-#include "Param.h"
 #include "Monitor.h"
-#include "Mavlink.h"
-
-#include "SUB/ardupilotmega/mavlink.h"
-
-//#include "SUB/protocol.h"
-//#include "SUB/mavlink_helpers.h"
 
 
 Monitor m;
@@ -18,7 +8,7 @@ void setup() {
 
   Serial.begin(115200);  //USB debugging
 
-  delay(10000);
+  delay(5000);
 
 
 

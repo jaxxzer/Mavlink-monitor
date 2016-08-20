@@ -1,15 +1,22 @@
 #include "Mavlink.h"
 
-Mavlink::Mavlink(Parameters* _params) :
-master_time(0),
-params(_params)
+Mavlink::Mavlink() :
+master_time(0)
 {}
+
+void Mavlink::init(Parameters *_params) {
+  params = _params;
+}
+
+void Mavlink::update(void) {
+  comm_receive();
+}
 
 void Mavlink::send_heartbeat() {
   ////////////////////
   //Heartbeat
   //////////////////////
-
+  Serial.println("Sending heartbeat");
   // Define the system type (see mavlink_types.h for list of possible types) 
   int system_type = MAV_TYPE_MONITOR;
   int autopilot_type = MAV_AUTOPILOT_INVALID;
@@ -44,22 +51,22 @@ void Mavlink::send_system_status() {
 //                   uint32_t onboard_control_sensors_health, uint16_t load, uint16_t voltage_battery, int16_t current_battery, 
 //                   int8_t battery_remaining, uint16_t drop_rate_comm, uint16_t errors_comm, uint16_t errors_count1, 
 //                   uint16_t errors_count2, uint16_t errors_count3, uint16_t errors_count4)
-//  mavlink_message_t msg; 
-//  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-//  
+  mavlink_message_t msg; 
+  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+  
 //  uint16_t voltage = measureVoltage();
 //  uint16_t current = measureCurrent();
-//      
+      float percent_remaining = 0;
 //  float percent_remaining = (100 * (voltage - (cells * CELL_VMIN))) / (cells * (CELL_VMAX - CELL_VMIN));
 //  uint32_t water_detected = water?0x20000000:0x0;
 //  digitalWrite(PIN_LED, water_detected > 0);
-//  mavlink_msg_sys_status_pack(SYSID, COMPID, &msg,
-//                   looptime, 0x20000000, 
-//                   water_detected, looptime, voltage, current,
-//                   (int8_t)percent_remaining, looptime, 0, 0,
-//                   0, 0, 0);
-//  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-//  Serial1.write(buf, len);
+  mavlink_msg_sys_status_pack(SYSID, COMPID, &msg,
+                   0, 0x20000000, 
+                   0, 0, 0, 0,
+                   (int8_t)percent_remaining, 0, 0, 0,
+                   0, 0, 0);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial1.write(buf, len);
 }
 
 void Mavlink::send_params() {
@@ -207,6 +214,7 @@ void Mavlink::comm_receive() {
   //receive data over Serial 
   while(Serial1.available() > 0) { 
     uint8_t c = Serial1.read();
+    Serial.print(c);
 
     //try to get a new message 
     if(mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)) { 

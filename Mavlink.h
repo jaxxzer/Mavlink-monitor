@@ -2,8 +2,6 @@
 #define MAVLINK_MONITOR_H
 
 #include "Param.h"
-
-
 #include "SUB/ardupilotmega/mavlink.h"
 
 #define SYSID 2
@@ -12,7 +10,11 @@
 
 class Mavlink {
   public:
-    Mavlink(Parameters* params);
+
+    void init(Parameters *_params);
+    void update(void);
+    
+    Mavlink();
     void send_heartbeat(void);
     void send_system_status(void);
     void send_params(void);
