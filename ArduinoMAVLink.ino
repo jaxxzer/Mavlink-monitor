@@ -1,6 +1,7 @@
 #include <Arduino.h>  // for type definitions (ie uint8_t)
 
 #include "SUB/ardupilotmega/mavlink.h"
+#include "MapleMini.h" // board pinout definition
 //#include "SUB/protocol.h"
 //#include "SUB/mavlink_helpers.h"
 
@@ -9,10 +10,6 @@
 
 #define SYSID 2
 #define COMPID 1
-
-#define ADC_VOLTAGE PA1
-#define ADC_CURRENT PA0
-#define PIN_LED 33
 
 ///////////////////////////
 /////Scheduling////////////
@@ -41,6 +38,9 @@ float SRATE2 = 1;
 float BAUD_PIX = 115200;
 float BAUD_ESP = 115200;
 float BAUD_232 = 115200;
+uint32_t test = 1;
+uint16_t fart = 9;
+uint32_t farts[8];
 
 Parameters params = Parameters();
 
@@ -86,6 +86,7 @@ void setup() {
   params.add("BAUD_PIX", &BAUD_PIX);
   params.add("BAUD_ESP", &BAUD_ESP);
   params.add("BAUD_232", &BAUD_232);
+//  params.add("TEST", &test);
   
   params.load_all();
 
@@ -110,6 +111,7 @@ void setup() {
 }
 
 
+uint64_t add_farts = (uint64_t)&farts;
 
 void loop() {
   uint32_t tnowus = micros();
@@ -128,6 +130,10 @@ void loop() {
   if(tnow - last1Hz > 1000/1) {
 
     last1Hz = tnow;
+    Serial.print("test= ");
+    Serial.print(test);
+    Serial.print(" fart= ");
+    Serial.println(fart);
 
     send_heartbeat();
      
