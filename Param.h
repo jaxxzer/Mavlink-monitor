@@ -41,12 +41,17 @@ class Parameters
 {
   public:
     Parameters();
+    
     param_t* add(char* id, float* var);
+    param_t* add(char* id, uint32_t* var);
+    
     void load_all(void);
+    
     void save(param_t param);
     void save(float* var);
+
     param_t* find(char *id);
-    param_t get(uint8_t index);
+    param_t* get(uint8_t index);
     param_t* set(char* id, float value);
 
     uint8_t num_params(void) const { return _n; };

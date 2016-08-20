@@ -33,11 +33,11 @@ uint32_t lastS2 = 1000;
 
 float VSCALE = 1580;
 float CSCALE = 1;
-float SRATE1 = 1;
-float SRATE2 = 1;
-float BAUD_PIX = 115200;
-float BAUD_ESP = 115200;
-float BAUD_232 = 115200;
+uint32_t SRATE1 = 1;
+uint32_t SRATE2 = 1;
+uint32_t BAUD_PIX = 115200;
+uint32_t BAUD_ESP = 115200;
+uint32_t BAUD_232 = 115200;
 uint32_t test = 1;
 uint16_t fart = 9;
 uint32_t farts[8];
@@ -65,12 +65,7 @@ bool water = false;
 
 void setup() {
 
-  //SerialManager.init();
-
-  Serial.begin(115200);  //usb
-  Serial1.begin(921600); //pixhawk
-  Serial2.begin(115200); //esp
-  Serial3.begin(115200); //rs232
+  Serial.begin(115200);  //USB debugging
 
   delay(10000);
 
@@ -86,10 +81,17 @@ void setup() {
   params.add("BAUD_PIX", &BAUD_PIX);
   params.add("BAUD_ESP", &BAUD_ESP);
   params.add("BAUD_232", &BAUD_232);
-//  params.add("TEST", &test);
-  
+  params.add("TEST", &test);
+
   params.load_all();
 
+
+  //SerialManager.init();
+
+  Serial1.begin(115200); //pixhawk
+  Serial2.begin(115200); //esp
+  Serial3.begin(115200); //rs232
+  
   
   uint16_t voltage = measureVoltage();
   if(voltage < 9000) {
@@ -101,13 +103,12 @@ void setup() {
   }
 
 
-  pinMode(PIN_LED, OUTPUT);     // Initialize the PIN_LED pin as an output
-  digitalWrite(PIN_LED, HIGH);
-
-  pinMode(PB6, INPUT);
+  pinMode(PIN_LED, OUTPUT); // Onboard led
+  pinMode(PB6, INPUT); // MapleMini pin 16
 
   send_text("Online");
   Serial.println("ONLINE");
+  digitalWrite(PIN_LED, HIGH);
 }
 
 
@@ -155,7 +156,7 @@ void loop() {
 
   // 10Hz loop
   if(tnow - last10Hz > 1000/10) {
-    send_heartbeat();
+    //send_heartbeat();
     last10Hz = tnow;
 
     
@@ -164,6 +165,14 @@ void loop() {
   if(tnow - last50Hz > 1000/50) {
     last50Hz = tnow;
   
+  }
+
+  if(SRATE1 > 20) SRATE1 = 20;
+  if(SRATE1 < 1) SRATE1 = 1;
+  if(tnow - lastS1 > 1000/SRATE1) {
+    lastS1 = tnow;
+    send_heartbeat();
+    
   }
 
   //range_receive();
@@ -257,7 +266,9 @@ void comm_receive() {
           mavlink_msg_param_set_decode(&msg, &in);
           if(in.target_system == SYSID && in.target_component == COMPID) {
             Serial.print("SET PARAM: ");
-            Serial.println(in.param_id);
+            Serial.print(in.param_id);
+            Serial.print(" TYPE: ");
+            Serial.println(in.param_type);
             param_t* param = params.set(in.param_id, in.param_value);
             send_param(param->index);
           }
@@ -367,17 +378,20 @@ void send_system_status() {
 void send_params() {
   //  static inline uint16_t mavlink_msg_param_value_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
   //                   const char *param_id, float param_value, uint8_t param_type, uint16_t param_count, uint16_t param_index)
-  mavlink_message_t msg; 
-  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-  uint16_t len;
+//  mavlink_message_t msg; 
+//  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+//  uint16_t len;
 
   for(int i = 0; i < params.num_params(); i++) {
-    param_t param = params.get(i);
-
-    mavlink_msg_param_value_pack(SYSID, COMPID, &msg, param.id, *param.value, param.type, params.num_params(), param.index);
-    len = mavlink_msg_to_send_buffer(buf, &msg);
-  
-    Serial1.write(buf, len);   
+    send_param(i);
+//    param_t* param = params.get(i);
+//    Serial.print("Send type: ");
+//    Serial.println(param->type);
+//
+//    mavlink_msg_param_value_pack(SYSID, COMPID, &msg, param->id, *(param->value), param->type, params.num_params(), param->index);
+//    len = mavlink_msg_to_send_buffer(buf, &msg);
+//  
+//    Serial1.write(buf, len);   
   }
 }
 
@@ -389,9 +403,11 @@ void send_param(uint8_t index) {
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   uint16_t len;
   
-  param_t param = params.get(index);
+  param_t* param = params.get(index);
+  Serial.print("Send type: ");
+  Serial.println(param->type);
 
-  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, param.id, *param.value, param.type, params.num_params(), param.index);
+  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, param->id, *(param->value), param->type, params.num_params(), param->index);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   
   Serial1.write(buf, len);   

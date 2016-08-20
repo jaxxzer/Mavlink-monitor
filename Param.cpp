@@ -23,6 +23,25 @@ param_t* Parameters::add(char* id, float* var)
   return &_params[_n++];
 }
 
+param_t* Parameters::add(char* id, uint32_t* var)
+{
+  if(_n >= MAX_PARAMS) {
+    return NULL;
+  }
+  
+  strncpy(_params[_n].id, id, PARAM_NAME_MAX);
+  _params[_n].id[PARAM_NAME_MAX] = 0; // add null terminator
+  _params[_n].type = MAV_PARAM_TYPE_UINT32;
+  _params[_n].address = _n * sizeof(float);
+  _params[_n].index = _n;
+  _params[_n].value = (float*)var;
+
+  return &_params[_n++];
+}
+
+
+
+
 void Parameters::load_all()
 {
   for(int i = 0; i < _n; i++) {
@@ -33,7 +52,10 @@ void Parameters::load_all()
     Serial.print(" Index: ");
     Serial.print(_params[i].index);
     Serial.print(" Value: ");
-    Serial.println(*_params[i].value);
+    if(_params[i].type == MAV_PARAM_TYPE_UINT32)
+      Serial.println(*(uint32_t*)_params[i].value);
+    else
+      Serial.println(*_params[i].value);
   }
 }
 
@@ -88,15 +110,18 @@ param_t* Parameters::set(char* id, float value) {
 
   Serial.print("PARAM ");
   Serial.print(id);
-  Serial.println(*(param->value));
+  if(param->type == MAV_PARAM_TYPE_UINT32)
+    Serial.println(*((uint32_t*)param->value));
+  else
+    Serial.println(*(param->value));
   return param;
 }
 
-param_t Parameters::get(uint8_t index) {
-//  if(index >= _n) {
-//    return NULL;
-//  }
-  return _params[index];
+param_t* Parameters::get(uint8_t index) {
+  if(index >= _n) {
+    return NULL;
+  }
+  return &_params[index];
 
 }
 
