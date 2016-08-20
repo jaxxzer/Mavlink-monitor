@@ -1,10 +1,9 @@
 #ifndef PARAM_H
 #define PARAM_H
+
 #include <Arduino.h>  // for type definitions
 #include "SUB/ardupilotmega/mavlink.h"
 #include <EEPROM.h>
-//#include "SUB/protocol.h"
-//#include "SUB/mavlink_helpers.h"
 
 #define MAX_PARAMS 10
 #define PARAM_NAME_MAX 16
@@ -37,8 +36,7 @@ typedef struct {
     float*              value;
 } param_t;
 
-class Parameters
-{
+class Parameters {
   public:
     Parameters();
     
