@@ -2,8 +2,10 @@
 #define BATTERY_MONITOR_H
 
 #include <Arduino.h>
-
 #include "Param.h"
+
+#define CELL_VMAX 4200.0
+#define CELL_VMIN 3500.0
 
 class BatteryMonitor {
   public:

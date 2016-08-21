@@ -8,7 +8,7 @@ void setup() {
 
   Serial.begin(115200);  //USB debugging
 
-  delay(5000);
+  delay(2000);
 
 
 
@@ -31,12 +31,10 @@ void setup() {
 //  }
 
 
-  pinMode(PIN_LED, OUTPUT); // Onboard led
-  pinMode(PB6, INPUT); // MapleMini pin 16
 
   //send_text("Online");
   Serial.println("ONLINE");
-  digitalWrite(PIN_LED, HIGH);
+
 }
 
 void loop() {

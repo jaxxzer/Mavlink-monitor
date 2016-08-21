@@ -13,6 +13,10 @@ void BatteryMonitor::init(Parameters *_params) {
   params->add("CSCALE", &CSCALE);
 }
 
+void BatteryMonitor::update() {
+  return;
+}
+
 uint16_t BatteryMonitor::measureVoltage() {
   if(_voltage_pin == -1) {
     return 0;

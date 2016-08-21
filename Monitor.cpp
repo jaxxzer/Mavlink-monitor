@@ -18,10 +18,10 @@ BAUD_232(0),
 test(0),
 
 params(),
-
 battery(),
-
-pixhawk()
+pixhawk(),
+rangefinder(),
+notify()
 
 {
 
@@ -31,6 +31,9 @@ void Monitor::init() {
     //params.init();
   battery.init(&params);
   pixhawk.init(&params);
+  rangefinder.init(&params);
+  notify.init(&params);
+  
   params.add("SRATE1", &SRATE1);
   params.add("SRATE2", &SRATE2);
   params.add("BAUD_PIX", &BAUD_PIX);
@@ -39,12 +42,25 @@ void Monitor::init() {
   params.add("TEST", &test);
 
   params.load_all();
+
+
+
+
+  Serial.println("Testing notify");
+  Serial.println("Turning led on");
+  notify.set(LED_MAPLE, true);
+  delay(5000);
+  Serial.println("Turning led off");
+  notify.set(LED_MAPLE, false);
+  delay(5000);
+  Serial.println("Playing pattern");
+  notify.play(LED_MAPLE);
 }
 
 void Monitor::run() {
   while(true) {
     uint32_t tnow = millis();
-//    
+
 //    looptime = tnowus - lastus;
 //    lastus = tnowus;
 //    
@@ -54,6 +70,12 @@ void Monitor::run() {
 //      pixhawk.send_request_data_stream();
 //    }
 //    
+
+    battery.update();
+    pixhawk.update();
+    rangefinder.update();
+    notify.update();
+
     // 1Hz loop
     if(tnow - last1Hz > 1000/1) {
     
@@ -67,14 +89,13 @@ void Monitor::run() {
     
     }
 
-    pixhawk.update();
     
     
     // 5Hz loop
     if(tnow - last5Hz > 1000/5) {
       last5Hz = tnow;
       pixhawk.send_system_status();
-//      pixhawk.send_distance_sensor(range*100);
+//      pixhawk.send_distance_sensor(rangefinder.range);
 //      
 //      Serial3.write('Z');
 //      
