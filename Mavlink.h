@@ -2,19 +2,22 @@
 #define MAVLINK_MONITOR_H
 
 #include "Param.h"
+#include "Notify.h"
 #include "SUB/ardupilotmega/mavlink.h"
 
 #define SYSID 2
 #define COMPID 1
 
+#define LINK_TIMEOUT_MS 2000
 
 class Mavlink {
   public:
+    Mavlink();
 
     void init(Parameters *_params);
     void update(void);
     
-    Mavlink();
+    
     void send_heartbeat(void);
     void send_system_status(void);
     void send_params(void);
@@ -28,8 +31,12 @@ class Mavlink {
     void comm_receive(void);
     Parameters* params;
 
+    conn_status_t status;
+
   private: 
     uint32_t master_time;
+    uint32_t last_master_recv_ms;
+
 };
 
 #endif

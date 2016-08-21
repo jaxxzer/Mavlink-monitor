@@ -13,21 +13,15 @@ _last_tick_ms(0)
 	leds[LED_1].pin = -1;
 	leds[LED_2].pin = -1;
 	leds[LED_3].pin = -1;
+
 }
 
 void Notify::init(Parameters *_params) {
 	params = _params;
 
 	leds[LED_MAPLE].default_on = true;
-	leds[LED_MAPLE].pattern[0] = 5;
-	leds[LED_MAPLE].pattern[1] = 10;
-	leds[LED_MAPLE].pattern[2] = 5;
-	leds[LED_MAPLE].pattern[3] = 25;
-//	  leds[LED_MAPLE].pattern[4] = 5;
-//	  leds[LED_MAPLE].pattern[5] = 20;
-//	  leds[LED_MAPLE].pattern[6] = 5;
-//	  leds[LED_MAPLE].pattern[7] = 50;
 	leds[LED_MAPLE].playing = false;
+  //leds[LED_MAPLE].pattern = pattern2;
 
 	for(int i = 0; i < NOTIFY_NUM_LEDS; i++) {
 		if(leds[i].pin >= 0) {
@@ -38,7 +32,9 @@ void Notify::init(Parameters *_params) {
 }
 
 void Notify::update() {
-	uint32_t tnow = millis();
+  uint32_t tnow = millis();
+
+
 	if(tnow < _last_tick_ms + NOTIFY_UPDATE_MS) {
 		return;
 	}
@@ -71,22 +67,45 @@ void Notify::update() {
 	}
 }
 
-void Notify::set(uint8_t index, bool state) {
-	leds[index].playing = false;
-  leds[index].state = state;
-	digitalWrite(leds[index].pin, leds[index].default_on?state:!state);
+void Notify::set(uint8_t id, bool state) {
+	leds[id].playing = false;
+  leds[id].state = state;
+	digitalWrite(leds[id].pin, leds[id].default_on?state:!state);
 }
 
-void Notify::play(uint8_t index) {
-	leds[index].playing = true;
-	leds[index].p = 0;
-	leds[index].c = 0;
-  leds[index].state = true;
-	digitalWrite(leds[index].pin, leds[index].default_on);
+void Notify::set_status(uint8_t id, conn_status_t status) {
+  if(leds[id].status == status)
+    return;
+
+  leds[id].status = status;
+  switch (status) {
+    case STATUS_CONNECTED :
+      play(id, pattern_connected);
+      break;
+    case STATUS_NOT_CONNECTED :
+      play(id, pattern_not_connected);
+      break;
+    case STATUS_CONNECTION_LOST :
+      play(id, pattern_connection_lost);
+      break;
+  }
 }
 
-void Notify::stop(uint8_t index) {
-	leds[index].playing = false;
-	digitalWrite(leds[index].pin, !leds[index].default_on);
+void Notify::play(uint8_t id) {
+	leds[id].playing = true;
+	leds[id].p = 0;
+	leds[id].c = 0;
+  leds[id].state = true;
+	digitalWrite(leds[id].pin, leds[id].default_on);
+}
+
+void Notify::play(uint8_t id, uint8_t *_pattern) {
+  leds[id].pattern = _pattern;
+  play(id);
+}
+
+void Notify::stop(uint8_t id) {
+	leds[id].playing = false;
+	digitalWrite(leds[id].pin, !leds[id].default_on);
 }
 

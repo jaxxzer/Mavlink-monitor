@@ -16,28 +16,29 @@
     LED_3
   } notify_id_t;
 
+  typedef enum {
+    STATUS_CONNECTED,
+    STATUS_NOT_CONNECTED,
+    STATUS_CONNECTION_LOST
+  } conn_status_t;
+
+
+
+
+
+static uint8_t pattern_connected[NOTIFY_PATTERN_MAX] = {3 , 7, 3, 38, 0, 0, 0, 0};
+static uint8_t pattern_not_connected[NOTIFY_PATTERN_MAX] = {10 , 10, 0, 0, 0, 0, 0, 0};
+static uint8_t pattern_connection_lost[NOTIFY_PATTERN_MAX] = {3, 3, 3, 3, 3, 15, 0, 0};
+
+  
 class Notify {
 public:
 
-	//	struct flags_t {
-	//		uint16_t initializing		:1;
-	//		uint16_t esp_ok			:1;
-	//		uint16_t rangefinder_status :1;
-	//		uint16_t pixhawk_status		:1;
-	//		uint16_t monitor_status		:1;
-	//	};
-
-
-
-//	static const uint8_t[NOTIFY_PATTERN_MAX] pattern1 =
-//	{30 , 5, 30, 5, 0, 0, 0, 0};
-//
-//	static const uint_8t[NOTIFY_PATTERN_MAX] pattern2 =
-//	{5 , 30, 5, 30, 0, 0, 0, 0};
 
 	typedef struct {
 		notify_id_t id; //id of led
-		uint8_t pattern[NOTIFY_PATTERN_MAX]; //pattern array, the number at each index indicates number of ticks to count before next toggle
+    conn_status_t status;
+		uint8_t *pattern; //pattern array, the number at each index indicates number of ticks to count before next toggle
 		uint8_t p; //pattern pointer
 		uint8_t c; //tick counter
 		bool state; //current state of led (on or off)
@@ -51,10 +52,13 @@ public:
 	void init(Parameters *_params);
 	void update();
 
-	void set(uint8_t index, bool state); // set state
-	void play(uint8_t index); // start playing pattern
-	void stop(uint8_t index); // stop playing pattern
+	void set(uint8_t id, bool state); // set state
+	void play(uint8_t id); // start playing pattern
+  void play(uint8_t id, uint8_t *_pattern);
+	void stop(uint8_t id); // stop playing pattern
 
+  void set_status(uint8_t id, conn_status_t status);
+  
 	Parameters *params;
 
 //	struct flags_t flags;

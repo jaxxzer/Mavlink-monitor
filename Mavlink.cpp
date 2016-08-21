@@ -1,15 +1,36 @@
 #include "Mavlink.h"
 
 Mavlink::Mavlink() :
-master_time(0)
+master_time(0),
+status(STATUS_NOT_CONNECTED),
+last_master_recv_ms(0)
 {}
 
 void Mavlink::init(Parameters *_params) {
   params = _params;
+
 }
 
 void Mavlink::update(void) {
+  uint32_t tnow = millis();
+  
   comm_receive();
+
+  if(last_master_recv_ms == 0)
+    return;
+    
+  if(tnow > last_master_recv_ms + LINK_TIMEOUT_MS) {
+    if(status == STATUS_CONNECTED)
+      status = STATUS_CONNECTION_LOST;
+    return;
+  }
+
+  if(status != STATUS_CONNECTED) {
+    status = STATUS_CONNECTED;
+    send_request_data_stream();
+  }
+
+
 }
 
 void Mavlink::send_heartbeat() {
@@ -204,9 +225,6 @@ void Mavlink::send_mission_count(uint8_t target_system, uint8_t target_component
   Serial1.write(buf, len);
 }
 
-
-static bool connected = false;
-
 void Mavlink::comm_receive() { 
   mavlink_message_t msg; 
   mavlink_status_t status;
@@ -214,15 +232,16 @@ void Mavlink::comm_receive() {
   //receive data over Serial 
   while(Serial1.available() > 0) { 
     uint8_t c = Serial1.read();
-    Serial.print(c);
 
     //try to get a new message 
     if(mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)) { 
+      if(msg.sysid == 1 && msg.compid == 1)
+        last_master_recv_ms = millis();
 
-      if(connected == false) {
-        connected = true;
-        send_request_data_stream();
-      }
+//      if(connected == false) {
+//        connected = true;
+//        send_request_data_stream();
+//      }
       //Got a valid message
 
       Serial.print("Got msg ");

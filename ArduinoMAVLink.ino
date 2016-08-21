@@ -8,9 +8,6 @@ void setup() {
 
   Serial.begin(115200);  //USB debugging
 
-  delay(2000);
-
-
 
 
 

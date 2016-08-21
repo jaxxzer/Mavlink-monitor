@@ -1,6 +1,7 @@
 #ifndef RANGEFINDER_H
 #define RANGEFINDER_H
 
+#include "Notify.h"
 #include "Param.h"
 
 
@@ -17,6 +18,8 @@ public:
 	float range;
 
 	Parameters *params;
+
+  conn_status_t status;
 
 
 private:

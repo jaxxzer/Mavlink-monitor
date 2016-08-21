@@ -6,7 +6,8 @@ Rangefinder::Rangefinder() :
 range(0),
 PINGRATE(0),
 RANGE_ENABLED(0),
-params(NULL)
+params(NULL),
+status(STATUS_NOT_CONNECTED)
 {}
 
 void Rangefinder::init(Parameters *_params) {
@@ -21,6 +22,15 @@ void Rangefinder::init(Parameters *_params) {
 void Rangefinder::update() {
 	range_request();
 	range_receive();
+  
+  if(range > 0) {
+    status = STATUS_CONNECTED;
+    return;
+  }
+
+  if(status == STATUS_CONNECTED)
+    status = STATUS_CONNECTION_LOST;
+
 }
 
 void Rangefinder::range_request() {

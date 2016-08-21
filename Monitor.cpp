@@ -28,12 +28,6 @@ notify()
 }
 
 void Monitor::init() {
-    //params.init();
-  battery.init(&params);
-  pixhawk.init(&params);
-  rangefinder.init(&params);
-  notify.init(&params);
-  
   params.add("SRATE1", &SRATE1);
   params.add("SRATE2", &SRATE2);
   params.add("BAUD_PIX", &BAUD_PIX);
@@ -41,52 +35,42 @@ void Monitor::init() {
   params.add("BAUD_232", &BAUD_232);
   params.add("TEST", &test);
 
-  params.load_all();
-
-
-
-
-  Serial.println("Testing notify");
-  Serial.println("Turning led on");
-  notify.set(LED_MAPLE, true);
-  delay(5000);
-  Serial.println("Turning led off");
-  notify.set(LED_MAPLE, false);
-  delay(5000);
-  Serial.println("Playing pattern");
-  notify.play(LED_MAPLE);
+  battery.init(&params);
+  pixhawk.init(&params);
+  rangefinder.init(&params);
+  notify.init(&params);
+  
+  params.load_all(); // must not be called until all parameters have been added
 }
 
 void Monitor::run() {
   while(true) {
     uint32_t tnow = millis();
 
-//    looptime = tnowus - lastus;
-//    lastus = tnowus;
-//    
-//    //30second loop
-//    if(tnow - last30s > 1000 * 30) {
-//      last30s = tnow;
-//      pixhawk.send_request_data_stream();
-//    }
-//    
 
     battery.update();
     pixhawk.update();
     rangefinder.update();
     notify.update();
 
+    //notify.set_status(LED_MAPLE, pixhawk.status);
+    notify.set_status(LED_MAPLE, rangefinder.status);
+
+//    looptime = tnowus - lastus;
+//    lastus = tnowus;
+    
+    //30second loop
+    if(tnow - last30s > 1000 * 10) {
+      last30s = tnow;
+      //notify.play(LED_MAPLE, patterns.pattern1);
+      //pixhawk.send_request_data_stream();
+    }
+
     // 1Hz loop
     if(tnow - last1Hz > 1000/1) {
-    
       last1Hz = tnow;
-      Serial.print("test= ");
-      Serial.print(test);
-      Serial.print(" fart= ");
-      Serial.println(fart);
-      
+
       pixhawk.send_heartbeat();
-    
     }
 
     
@@ -94,12 +78,11 @@ void Monitor::run() {
     // 5Hz loop
     if(tnow - last5Hz > 1000/5) {
       last5Hz = tnow;
+      
       pixhawk.send_system_status();
-//      pixhawk.send_distance_sensor(rangefinder.range);
-//      
-//      Serial3.write('Z');
-//      
-//      water = digitalRead(PB6);
+      
+      if(rangefinder.status == STATUS_CONNECTED)
+        pixhawk.send_distance_sensor(rangefinder.range);
     }
 //    
 //    
