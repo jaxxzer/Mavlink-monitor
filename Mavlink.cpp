@@ -1,10 +1,11 @@
 #include "Mavlink.h"
 
-Mavlink::Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *port) :
+Mavlink::Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *_port) :
 status(STATUS_NOT_CONNECTED),
 last_master_recv_ms(0),
 _sysid(sysid),
-_compid(compid)
+_compid(compid),
+port(_port)
 {}
 
 void Mavlink::init(Parameters *_params) {
@@ -58,7 +59,7 @@ void Mavlink::send_heartbeat() {
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   
   // Send the message (.write sends as bytes) 
-  Serial1.write(buf, len);
+  port->write(buf, len);
 }
 
 void Mavlink::send_system_status() {
@@ -88,7 +89,7 @@ void Mavlink::send_system_status() {
                    (int8_t)percent_remaining, 0, 0, 0,
                    0, 0, 0);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial1.write(buf, len);
+  port->write(buf, len);
 }
 
 void Mavlink::send_params() {
@@ -107,7 +108,7 @@ void Mavlink::send_params() {
 //    mavlink_msg_param_value_pack(_sysid, _compid, &msg, param->id, *(param->value), param->type, params->num_params(), param->index);
 //    len = mavlink_msg_to_send_buffer(buf, &msg);
 //  
-//    Serial1.write(buf, len);   
+//    port->write(buf, len);   
   }
 }
 
@@ -126,7 +127,7 @@ void Mavlink::send_param(uint8_t index) {
   mavlink_msg_param_value_pack(_sysid, _compid, &msg, param->id, *(param->value), param->type, params->num_params(), param->index);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   
-  Serial1.write(buf, len);   
+  port->write(buf, len);   
 }
 
 void Mavlink::send_text(char* text) {
@@ -137,7 +138,7 @@ void Mavlink::send_text(char* text) {
   mavlink_msg_statustext_pack(_sysid, _compid, &msg, MAV_SEVERITY_INFO, text);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 
-  Serial1.write(buf, len);
+  port->write(buf, len);
 }
 
 void Mavlink::send_battery_status() {
@@ -154,7 +155,7 @@ void Mavlink::send_battery_status() {
   
   mavlink_msg_battery_status_pack(_sysid, _compid, &msg, 1, 1, 1, 1, voltages, 1, 1, 1, 1);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial1.write(buf, len);
+  port->write(buf, len);
 }
 
 void Mavlink::send_power_status() {
@@ -173,7 +174,7 @@ void Mavlink::send_power_status() {
   mavlink_msg_power_status_pack(_sysid, _compid, &msg,
                    1254, 59, 4);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial1.write(buf, len);
+  port->write(buf, len);
 }
 
 void Mavlink::send_distance_sensor(uint16_t distance_cm) {
@@ -193,7 +194,7 @@ void Mavlink::send_distance_sensor(uint16_t distance_cm) {
                    master_time, 30, 500, distance_cm, MAV_DISTANCE_SENSOR_ULTRASOUND, 1, MAV_SENSOR_ROTATION_PITCH_90, 0);
                    
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial1.write(buf, len);
+  port->write(buf, len);
 }
 
 void Mavlink::send_request_data_stream() {
@@ -209,7 +210,7 @@ void Mavlink::send_request_data_stream() {
                      1, 1, MAV_DATA_STREAM_ALL, 0, 0);
                      
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial1.write(buf, len);
+  port->write(buf, len);
                        
 }
 
@@ -223,7 +224,7 @@ void Mavlink::send_mission_count(uint8_t target_system, uint8_t target_component
               target_system, target_component, 0);
 
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial1.write(buf, len);
+  port->write(buf, len);
 }
 
 void Mavlink::comm_receive() { 
@@ -231,8 +232,8 @@ void Mavlink::comm_receive() {
   mavlink_status_t status;
   
   //receive data over Serial 
-  while(Serial1.available() > 0) { 
-    uint8_t c = Serial1.read();
+  while(port->available() > 0) { 
+    uint8_t c = port->read();
 
     //try to get a new message 
     if(mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)) { 

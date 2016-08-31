@@ -35,6 +35,7 @@ class Mavlink {
     uint32_t last_master_recv_ms;
     uint8_t _sysid;
     uint8_t _compid;
+    HardwareSerial *port;
 
 };
 

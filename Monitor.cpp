@@ -19,7 +19,7 @@ test(0),
 
 params(),
 battery(),
-pixhawk(2, 1, &Serial3),
+pixhawk(8, 1, &Serial1),
 rangefinder(),
 notify(),
 waterdetector()
