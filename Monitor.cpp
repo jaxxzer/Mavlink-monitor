@@ -19,7 +19,9 @@ test(0),
 
 params(),
 battery(),
-pixhawk(8, 1, &Serial1),
+pixhawk(8, 1, &Serial1, MAVLINK_COMM_0),
+pixhawk1(9, 1, &Serial2, MAVLINK_COMM_1),
+pixhawk2(10, 1, &Serial3, MAVLINK_COMM_2),
 rangefinder(),
 notify(),
 waterdetector()
@@ -42,7 +44,9 @@ void Monitor::init() {
 
   battery.init(&params);
   pixhawk.init(&params);
-  rangefinder.init(&params);
+  pixhawk1.init(&params);
+  pixhawk2.init(&params);
+  //rangefinder.init(&params);
   notify.init(&params);
   waterdetector.init(&params);
   
@@ -58,11 +62,13 @@ void Monitor::run() {
 
     battery.update();
     pixhawk.update();
-    rangefinder.update();
+    pixhawk1.update();
+    pixhawk2.update();
+    //rangefinder.update();
     notify.update();
-    waterdetector.update();
+    //waterdetector.update();
 
-    notify.set_status(LED_MAPLE, pixhawk.status);
+    notify.set_status(LED_MAPLE, pixhawk1.status);
     //notify.set_status(LED_MAPLE, rangefinder.status);
 
 //    looptime = tnowus - lastus;
@@ -80,6 +86,8 @@ void Monitor::run() {
       last1Hz = tnow;
 
       pixhawk.send_heartbeat();
+      pixhawk1.send_heartbeat();
+      pixhawk2.send_heartbeat();
     }
 
     
@@ -89,6 +97,8 @@ void Monitor::run() {
       last5Hz = tnow;
       
       pixhawk.send_system_status();
+      pixhawk1.send_system_status();
+      pixhawk2.send_system_status();
       
       if(rangefinder.status == STATUS_CONNECTED)
         pixhawk.send_distance_sensor(rangefinder.range);
@@ -115,12 +125,7 @@ void Monitor::run() {
 //      lastS1 = tnow;
 //      pixhawk.send_heartbeat();
 //      
-//    }
-//    
-//    //range_receive();
-//    pixhawk.comm_receive();
-
-  
+//    } 
 }
 
 

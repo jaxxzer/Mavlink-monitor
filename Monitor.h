@@ -17,6 +17,8 @@ public:
 	Monitor();
 	Parameters params;
 	Mavlink pixhawk;
+  Mavlink pixhawk1;
+  Mavlink pixhawk2;
 	BatteryMonitor battery;
 	Rangefinder rangefinder;
   Notify notify;
