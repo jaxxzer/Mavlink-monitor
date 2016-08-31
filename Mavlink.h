@@ -5,14 +5,11 @@
 #include "Notify.h"
 #include "SUB/ardupilotmega/mavlink.h"
 
-#define SYSID 2
-#define COMPID 1
-
 #define LINK_TIMEOUT_MS 2000
 
 class Mavlink {
   public:
-    Mavlink();
+    Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *port);
 
     void init(Parameters *_params);
     void update(void);
@@ -34,8 +31,10 @@ class Mavlink {
     conn_status_t status;
 
   private: 
-    uint32_t master_time;
+    static uint32_t master_time;
     uint32_t last_master_recv_ms;
+    uint8_t _sysid;
+    uint8_t _compid;
 
 };
 

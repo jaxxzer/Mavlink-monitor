@@ -1,9 +1,10 @@
 #include "Mavlink.h"
 
-Mavlink::Mavlink() :
-master_time(0),
+Mavlink::Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *port) :
 status(STATUS_NOT_CONNECTED),
-last_master_recv_ms(0)
+last_master_recv_ms(0),
+_sysid(sysid),
+_compid(compid)
 {}
 
 void Mavlink::init(Parameters *_params) {
@@ -48,7 +49,7 @@ void Mavlink::send_heartbeat() {
   
   // Pack the message
   //mavlink_message_heartbeat_pack(system id, component id, message container, system type, MAV_AUTOPILOT_GENERIC);
-  mavlink_msg_heartbeat_pack(SYSID, COMPID, &msg, system_type, autopilot_type, 0, 0, 0);
+  mavlink_msg_heartbeat_pack(_sysid, _compid, &msg, system_type, autopilot_type, 0, 0, 0);
 
 //  static inline uint16_t mavlink_msg_heartbeat_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
 //                   uint8_t type, uint8_t autopilot, uint8_t base_mode, uint32_t custom_mode, uint8_t system_status)
@@ -81,7 +82,7 @@ void Mavlink::send_system_status() {
 //  float percent_remaining = (100 * (voltage - (cells * CELL_VMIN))) / (cells * (CELL_VMAX - CELL_VMIN));
 //  uint32_t water_detected = water?0x20000000:0x0;
 //  digitalWrite(PIN_LED, water_detected > 0);
-  mavlink_msg_sys_status_pack(SYSID, COMPID, &msg,
+  mavlink_msg_sys_status_pack(_sysid, _compid, &msg,
                    0, 0x20000000, 
                    0, 0, 0, 0,
                    (int8_t)percent_remaining, 0, 0, 0,
@@ -103,7 +104,7 @@ void Mavlink::send_params() {
 //    Serial.print("Send type: ");
 //    Serial.println(param->type);
 //
-//    mavlink_msg_param_value_pack(SYSID, COMPID, &msg, param->id, *(param->value), param->type, params->num_params(), param->index);
+//    mavlink_msg_param_value_pack(_sysid, _compid, &msg, param->id, *(param->value), param->type, params->num_params(), param->index);
 //    len = mavlink_msg_to_send_buffer(buf, &msg);
 //  
 //    Serial1.write(buf, len);   
@@ -122,7 +123,7 @@ void Mavlink::send_param(uint8_t index) {
   Serial.print("Send type: ");
   Serial.println(param->type);
 
-  mavlink_msg_param_value_pack(SYSID, COMPID, &msg, param->id, *(param->value), param->type, params->num_params(), param->index);
+  mavlink_msg_param_value_pack(_sysid, _compid, &msg, param->id, *(param->value), param->type, params->num_params(), param->index);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   
   Serial1.write(buf, len);   
@@ -133,7 +134,7 @@ void Mavlink::send_text(char* text) {
   mavlink_message_t msg; 
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
-  mavlink_msg_statustext_pack(SYSID, COMPID, &msg, MAV_SEVERITY_INFO, text);
+  mavlink_msg_statustext_pack(_sysid, _compid, &msg, MAV_SEVERITY_INFO, text);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 
   Serial1.write(buf, len);
@@ -151,7 +152,7 @@ void Mavlink::send_battery_status() {
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   uint16_t voltages[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   
-  mavlink_msg_battery_status_pack(SYSID, COMPID, &msg, 1, 1, 1, 1, voltages, 1, 1, 1, 1);
+  mavlink_msg_battery_status_pack(_sysid, _compid, &msg, 1, 1, 1, 1, voltages, 1, 1, 1, 1);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial1.write(buf, len);
 }
@@ -169,7 +170,7 @@ void Mavlink::send_power_status() {
   mavlink_message_t msg; 
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
-  mavlink_msg_power_status_pack(SYSID, COMPID, &msg,
+  mavlink_msg_power_status_pack(_sysid, _compid, &msg,
                    1254, 59, 4);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial1.write(buf, len);
@@ -188,7 +189,7 @@ void Mavlink::send_distance_sensor(uint16_t distance_cm) {
   mavlink_message_t msg; 
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
-  mavlink_msg_distance_sensor_pack(SYSID, COMPID, &msg,
+  mavlink_msg_distance_sensor_pack(_sysid, _compid, &msg,
                    master_time, 30, 500, distance_cm, MAV_DISTANCE_SENSOR_ULTRASOUND, 1, MAV_SENSOR_ROTATION_PITCH_90, 0);
                    
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
@@ -204,7 +205,7 @@ void Mavlink::send_request_data_stream() {
 //                   uint8_t target_system, uint8_t target_component, uint8_t req_stream_id, uint16_t req_message_rate, uint8_t start_stop)
 
 
-  mavlink_msg_request_data_stream_pack(SYSID, COMPID, &msg,
+  mavlink_msg_request_data_stream_pack(_sysid, _compid, &msg,
                      1, 1, MAV_DATA_STREAM_ALL, 0, 0);
                      
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
@@ -218,7 +219,7 @@ void Mavlink::send_mission_count(uint8_t target_system, uint8_t target_component
   mavlink_message_t msg;
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
-  mavlink_msg_mission_count_pack(SYSID, COMPID, &msg,
+  mavlink_msg_mission_count_pack(_sysid, _compid, &msg,
               target_system, target_component, 0);
 
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
@@ -277,7 +278,7 @@ void Mavlink::comm_receive() {
   
           mavlink_param_set_t in;
           mavlink_msg_param_set_decode(&msg, &in);
-          if(in.target_system == SYSID && in.target_component == COMPID) {
+          if(in.target_system == _sysid && in.target_component == _compid) {
             Serial.print("SET PARAM: ");
             Serial.print(in.param_id);
             Serial.print(" TYPE: ");

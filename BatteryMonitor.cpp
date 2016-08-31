@@ -35,3 +35,12 @@ uint16_t BatteryMonitor::measureCurrent() {
   c = c * CSCALE * 10 / 360;
   return (int16_t)c;
 }
+
+//  uint16_t voltage = measureVoltage();
+//  if(voltage < 9000) {
+//    cells = 2;
+//  } else if(voltage < 13000) {
+//    cells = 3;
+//  } else {
+//    cells = 4;
+//  }

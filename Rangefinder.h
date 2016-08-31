@@ -4,6 +4,8 @@
 #include "Notify.h"
 #include "Param.h"
 
+#define RANGEFINDER_TIMEOUT_MS 10000
+
 
 class Rangefinder {
 public:
@@ -25,7 +27,9 @@ public:
 private:
 	void range_receive(void);
 	void range_request(void);
-	uint32_t _last_range_request_ms;
+	uint32_t last_request_ms;
+  bool response_received;
+  uint32_t last_response_ms;
 };
 
 #endif

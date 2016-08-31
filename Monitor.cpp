@@ -19,15 +19,20 @@ test(0),
 
 params(),
 battery(),
-pixhawk(),
+pixhawk(2, 1, &Serial3),
 rangefinder(),
-notify()
+notify(),
+waterdetector()
 
-{
-
-}
+{}
 
 void Monitor::init() {
+  
+  Serial.begin(115200);  //USB debugging
+  Serial1.begin(115200); //pixhawk
+  Serial2.begin(115200); //esp
+  Serial3.begin(115200); //rs232
+  
   params.add("SRATE1", &SRATE1);
   params.add("SRATE2", &SRATE2);
   params.add("BAUD_PIX", &BAUD_PIX);
@@ -39,12 +44,15 @@ void Monitor::init() {
   pixhawk.init(&params);
   rangefinder.init(&params);
   notify.init(&params);
+  waterdetector.init(&params);
   
   params.load_all(); // must not be called until all parameters have been added
+
+  Serial.println("ONLINE");
 }
 
 void Monitor::run() {
-  while(true) {
+
     uint32_t tnow = millis();
 
 
@@ -52,9 +60,10 @@ void Monitor::run() {
     pixhawk.update();
     rangefinder.update();
     notify.update();
+    waterdetector.update();
 
-    //notify.set_status(LED_MAPLE, pixhawk.status);
-    notify.set_status(LED_MAPLE, rangefinder.status);
+    notify.set_status(LED_MAPLE, pixhawk.status);
+    //notify.set_status(LED_MAPLE, rangefinder.status);
 
 //    looptime = tnowus - lastus;
 //    lastus = tnowus;
@@ -111,7 +120,7 @@ void Monitor::run() {
 //    //range_receive();
 //    pixhawk.comm_receive();
 
-  }
+  
 }
 
 

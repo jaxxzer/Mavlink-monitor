@@ -45,6 +45,7 @@ public:
 		int8_t pin; //pin that led is attached to
 		bool default_on; //default state of pin to turn LED on
 		bool playing; //true if pattern is playing
+    uint8_t delay; //number of ticks to delay before playing pattern
 	} led_t;
 
 	Notify();
@@ -58,6 +59,9 @@ public:
 	void stop(uint8_t id); // stop playing pattern
 
   void set_status(uint8_t id, conn_status_t status);
+
+  void set_delay(uint8_t id, uint8_t delay);
+
   
 	Parameters *params;
 

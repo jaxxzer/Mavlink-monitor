@@ -8,8 +8,7 @@
 #include "Rangefinder.h"
 #include "BatteryMonitor.h"
 #include "Notify.h"
-
-
+#include "WaterDetector.h"
 
 
 class Monitor {
@@ -21,6 +20,7 @@ public:
 	BatteryMonitor battery;
 	Rangefinder rangefinder;
   Notify notify;
+  WaterDetector waterdetector;
 
 	void run(void);
 	void init(void);

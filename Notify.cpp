@@ -20,8 +20,12 @@ void Notify::init(Parameters *_params) {
 	params = _params;
 
 	leds[LED_MAPLE].default_on = true;
-	leds[LED_MAPLE].playing = false;
-  //leds[LED_MAPLE].pattern = pattern2;
+   leds[LED_1].pin = 3;
+ leds[LED_2].pin = 4;
+ leds[LED_3].pin = 5;
+ leds[LED_1].default_on = true;
+ leds[LED_2].default_on = true;
+ leds[LED_3].default_on = true;
 
 	for(int i = 0; i < NOTIFY_NUM_LEDS; i++) {
 		if(leds[i].pin >= 0) {
@@ -29,6 +33,9 @@ void Notify::init(Parameters *_params) {
 			digitalWrite(leds[i].pin, !leds[i].default_on); // init all LEDS off
 		}
 	}
+
+
+ 
 }
 
 void Notify::update() {
@@ -44,25 +51,29 @@ void Notify::update() {
 	for(int i = 0; i < NOTIFY_NUM_LEDS; i++) {
 		if(leds[i].pin != -1 && leds[i].playing) {
 
-			if(leds[i].c >= leds[i].pattern[leds[i].p]) {
+      if(leds[i].delay > 0) {
+        leds[i].delay--;
+      } else {
 
-				// toggle the led
-				leds[i].state = !leds[i].state;
-				digitalWrite(leds[i].pin, leds[i].state);
-
-				leds[i].c = 0; // reset tick counter to 0
-				leds[i].p++; // increment pattern pointer
-
-				// check if we have reached the end of the pattern
-				if(leds[i].p > NOTIFY_PATTERN_MAX - 1 || leds[i].pattern[leds[i].p] == 0) {
-					leds[i].state = true;
-					digitalWrite(leds[i].pin, leds[i].default_on);
-					leds[i].p = 0;
-				}
-			} else {
-				leds[i].c++;
-			}
-
+  			if(leds[i].c >= leds[i].pattern[leds[i].p]) {
+  
+  				// toggle the led
+  				leds[i].state = !leds[i].state;
+  				digitalWrite(leds[i].pin, leds[i].state);
+  
+  				leds[i].c = 0; // reset tick counter to 0
+  				leds[i].p++; // increment pattern pointer
+  
+  				// check if we have reached the end of the pattern
+  				if(leds[i].p > NOTIFY_PATTERN_MAX - 1 || leds[i].pattern[leds[i].p] == 0) {
+  					leds[i].state = true;
+  					digitalWrite(leds[i].pin, leds[i].default_on);
+  					leds[i].p = 0;
+  				}
+  			} else {
+  				leds[i].c++;
+  			}
+      }
 		}
 	}
 }
@@ -74,7 +85,7 @@ void Notify::set(uint8_t id, bool state) {
 }
 
 void Notify::set_status(uint8_t id, conn_status_t status) {
-  if(leds[id].status == status)
+  if(leds[id].status == status && leds[id].playing == true)
     return;
 
   leds[id].status = status;
@@ -107,5 +118,9 @@ void Notify::play(uint8_t id, uint8_t *_pattern) {
 void Notify::stop(uint8_t id) {
 	leds[id].playing = false;
 	digitalWrite(leds[id].pin, !leds[id].default_on);
+}
+
+void Notify::set_delay(uint8_t id, uint8_t delay) {
+  leds[id].delay = delay;
 }
 
