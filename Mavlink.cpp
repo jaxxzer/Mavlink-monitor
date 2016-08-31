@@ -63,7 +63,7 @@ void Mavlink::send_heartbeat() {
   _port->write(buf, len);
 }
 
-void Mavlink::send_system_status() {
+void Mavlink::send_system_status(uint16_t looptime, bool water_detected) {
   ////////////////////
   //System Status
   //////////////////////
@@ -77,16 +77,16 @@ void Mavlink::send_system_status() {
 //                   uint16_t errors_count2, uint16_t errors_count3, uint16_t errors_count4)
   mavlink_message_t msg; 
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+  uint32_t sensor_health = 0;
+  sensor_health |= !water_detected * 0x20000000;
   
 //  uint16_t voltage = measureVoltage();
 //  uint16_t current = measureCurrent();
       float percent_remaining = 0;
 //  float percent_remaining = (100 * (voltage - (cells * CELL_VMIN))) / (cells * (CELL_VMAX - CELL_VMIN));
-//  uint32_t water_detected = water?0x20000000:0x0;
-//  digitalWrite(PIN_LED, water_detected > 0);
   mavlink_msg_sys_status_pack(_sysid, _compid, &msg,
                    0, 0x20000000, 
-                   0, 0, 0, 0,
+                   sensor_health, looptime, 0, 0,
                    (int8_t)percent_remaining, 0, 0, 0,
                    0, 0, 0);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
@@ -94,22 +94,8 @@ void Mavlink::send_system_status() {
 }
 
 void Mavlink::send_params() {
-  //  static inline uint16_t mavlink_msg_param_value_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-  //                   const char *param_id, float param_value, uint8_t param_type, uint16_t param_count, uint16_t param_index)
-//  mavlink_message_t msg; 
-//  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-//  uint16_t len;
-
   for(int i = 0; i < params->num_params(); i++) {
-    send_param(i);
-//    param_t* param = params->get(i);
-//    Serial.print("Send type: ");
-//    Serial.println(param->type);
-//
-//    mavlink_msg_param_value_pack(_sysid, _compid, &msg, param->id, *(param->value), param->type, params->num_params(), param->index);
-//    len = mavlink_msg_to_send_buffer(buf, &msg);
-//  
-//    _port->write(buf, len);   
+    send_param(i);   
   }
 }
 

@@ -10,6 +10,9 @@ last_detect_ms(0)
 
 void WaterDetector::init(Parameters *_params) {
 	params = _params;
+  for(int i = 0; i < NUM_WATERDETECTORS; i++) {
+    detectors[i].pin = -1;
+  }
 }
 
 void WaterDetector::update() {

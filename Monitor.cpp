@@ -2,7 +2,7 @@
 
 Monitor::Monitor() : 
 looptime(0),
-lastus(0),
+last_us(0),
 last30s(100),
 last1Hz(200),
 last5Hz(300),
@@ -15,7 +15,6 @@ SRATE2(0),
 BAUD_PIX(0),
 BAUD_ESP(0),
 BAUD_232(0),
-test(0),
 
 params(),
 battery(),
@@ -31,16 +30,17 @@ waterdetector()
 void Monitor::init() {
   
   Serial.begin(115200);  //USB debugging
-  Serial1.begin(115200); //pixhawk
-  Serial2.begin(115200); //esp
-  Serial3.begin(115200); //rs232
+  Serial1.begin(921600); //pixhawk
+  Serial2.begin(921600); //esp
+  Serial3.begin(921600); //rs232
+
+  delay(2000);
   
   params.add("SRATE1", &SRATE1);
   params.add("SRATE2", &SRATE2);
   params.add("BAUD_PIX", &BAUD_PIX);
   params.add("BAUD_ESP", &BAUD_ESP);
   params.add("BAUD_232", &BAUD_232);
-  params.add("TEST", &test);
 
   battery.init(&params);
   pixhawk.init(&params);
@@ -56,17 +56,18 @@ void Monitor::init() {
 }
 
 void Monitor::run() {
-
     uint32_t tnow = millis();
-
-
+    uint32_t tnow_us = micros();
+    uint32_t looptime = tnow_us - last_us;
+    last_us = tnow_us;
+    
     battery.update();
     pixhawk.update();
     pixhawk1.update();
     pixhawk2.update();
     //rangefinder.update();
     notify.update();
-    //waterdetector.update();
+    waterdetector.update();
 
     notify.set_status(LED_MAPLE, pixhawk1.status);
     //notify.set_status(LED_MAPLE, rangefinder.status);
@@ -96,9 +97,9 @@ void Monitor::run() {
     if(tnow - last5Hz > 1000/5) {
       last5Hz = tnow;
       
-      pixhawk.send_system_status();
-      pixhawk1.send_system_status();
-      pixhawk2.send_system_status();
+      pixhawk.send_system_status(looptime, waterdetector.detected);
+      pixhawk1.send_system_status(looptime, waterdetector.detected);
+      pixhawk2.send_system_status(looptime, waterdetector.detected);
       
       if(rangefinder.status == STATUS_CONNECTED)
         pixhawk.send_distance_sensor(rangefinder.range);

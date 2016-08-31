@@ -36,30 +36,22 @@ public:
 	uint32_t BAUD_PIX;
 	uint32_t BAUD_ESP;
 	uint32_t BAUD_232;
-	uint32_t test;
-	uint16_t fart;
-
-	///////////////////////////
-	/////Scheduling////////////
-	///////////////////////////
-
-	uint16_t looptime; // performance
-	uint32_t lastus; // performance
-
-	uint32_t last30s;
-	uint32_t last1Hz;
-	uint32_t last5Hz;
-	uint32_t last10Hz;
-	uint32_t last50Hz;
-	uint32_t lastS1;
-	uint32_t lastS2;
-
-
-
 
 private:
+  ///////////////////////////
+  /////Scheduling////////////
+  ///////////////////////////
 
-
+  uint16_t looptime; // performance
+  uint32_t last_us; // performance
+  
+  uint32_t last30s;
+  uint32_t last1Hz;
+  uint32_t last5Hz;
+  uint32_t last10Hz;
+  uint32_t last50Hz;
+  uint32_t lastS1;
+  uint32_t lastS2;
 
 };
 
