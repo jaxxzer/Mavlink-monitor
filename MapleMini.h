@@ -22,4 +22,7 @@
 #define PIN_ADC_1 4
 #define PIN_ADC_2 5
 
+#define PIN_ECHO 27
+#define PIN_TRIGGER 28
+
 #endif

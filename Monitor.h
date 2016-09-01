@@ -6,6 +6,7 @@
 #include "Mavlink.h"
 #include "Param.h"
 #include "Rangefinder.h"
+#include "Rangefinder_Ping.h"
 #include "BatteryMonitor.h"
 #include "Notify.h"
 #include "WaterDetector.h"
@@ -20,7 +21,7 @@ public:
   Mavlink pixhawk1;
   Mavlink pixhawk2;
 	BatteryMonitor battery;
-	Rangefinder rangefinder;
+	Rangefinder_Ping rangefinder;
   Notify notify;
   WaterDetector waterdetector;
 

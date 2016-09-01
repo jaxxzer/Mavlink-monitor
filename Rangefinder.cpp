@@ -19,7 +19,6 @@ void Rangefinder::init(Parameters *_params) {
 		params->add("PINGRATE", &PINGRATE);
 		params->add("RANGE_ENABLE", &RANGE_ENABLED);
 	}
-
 }
 
 void Rangefinder::update() {
@@ -58,11 +57,12 @@ void Rangefinder::range_request() {
   uint32_t tnow = millis();
 	if(tnow > last_request_ms + (1000/PINGRATE)) {
 		last_request_ms = tnow;
-    
-		Serial3.write('Z');
+		Serial3.write('Z'); // Micron echosounder 'Interrogate' command
 	}
 }
 
+// Parse micron range response
+// Response is formatted as: 'XX.xxxm\n\r'
 void Rangefinder::range_receive() {
   uint32_t tnow = millis();
   

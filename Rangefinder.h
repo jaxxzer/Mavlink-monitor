@@ -17,6 +17,7 @@ public:
 	uint32_t PINGRATE;
 	uint32_t RANGE_ENABLED;
 
+	//TODO parse and store as uint16_t
 	float range;
 
 	Parameters *params;

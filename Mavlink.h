@@ -30,7 +30,7 @@ class Mavlink {
     conn_status_t status;
 
   private: 
-    static uint32_t master_time;
+    uint32_t master_time;
     uint32_t last_master_recv_ms;
     uint8_t _sysid;
     uint8_t _compid;
