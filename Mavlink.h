@@ -14,7 +14,6 @@ class Mavlink {
     void init(Parameters *_params);
     void update(void);
     
-    
     void send_heartbeat(void);
     void send_system_status(uint16_t looptime, bool water_detected);
     void send_params(void);

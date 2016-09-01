@@ -44,6 +44,8 @@ private:
 
   uint16_t looptime; // performance
   uint32_t last_us; // performance
+  uint32_t totaltime;
+  uint32_t loopcounter;
   
   uint32_t last30s;
   uint32_t last1Hz;

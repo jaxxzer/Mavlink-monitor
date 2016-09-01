@@ -56,7 +56,7 @@ void Rangefinder::update() {
 
 void Rangefinder::range_request() {
   uint32_t tnow = millis();
-	if(tnow > last_request_ms + (1000.0f / PINGRATE)) {
+	if(tnow > last_request_ms + (1000/PINGRATE)) {
 		last_request_ms = tnow;
     
 		Serial3.write('Z');

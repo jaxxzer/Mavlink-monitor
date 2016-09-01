@@ -40,7 +40,6 @@ void Mavlink::send_heartbeat() {
   ////////////////////
   //Heartbeat
   //////////////////////
-  Serial.println("Sending heartbeat");
   // Define the system type (see mavlink_types.h for list of possible types) 
   int system_type = MAV_TYPE_MONITOR;
   int autopilot_type = MAV_AUTOPILOT_INVALID;
@@ -227,26 +226,17 @@ void Mavlink::comm_receive() {
       if(msg.sysid == 1 && msg.compid == 1)
         last_master_recv_ms = millis();
 
-//      if(connected == false) {
-//        connected = true;
-//        send_request_data_stream();
-//      }
       //Got a valid message
-
       Serial.print("Got msg ");
       Serial.print(msg.msgid);                                   
       Serial.print(" from ");
       Serial.print(msg.sysid);
       Serial.print(" , ");
       Serial.println(msg.compid);
-
       
       // Handle message
       switch(msg.msgid) {
         case MAVLINK_MSG_ID_HEARTBEAT: {
-
-            //digitalWrite(PIN_LED, !digitalRead(PIN_LED));
-
           
         } break;
 
