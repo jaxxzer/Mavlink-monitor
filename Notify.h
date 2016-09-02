@@ -22,7 +22,7 @@
     STATUS_CONNECTION_LOST
   } conn_status_t;
 
-static uint8_t pattern_connected[NOTIFY_PATTERN_MAX] = {3, 7, 3, 15, 0, 0, 0, 0};
+static uint8_t pattern_connected[NOTIFY_PATTERN_MAX] = {3, 7, 3, 38, 0, 0, 0, 0};
 static uint8_t pattern_not_connected[NOTIFY_PATTERN_MAX] = {10 , 10, 0, 0, 0, 0, 0, 0};
 static uint8_t pattern_connection_lost[NOTIFY_PATTERN_MAX] = {3, 3, 3, 3, 3, 15, 0, 0};
 

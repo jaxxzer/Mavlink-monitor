@@ -46,6 +46,7 @@ void Parameters::load_all()
 {
   for(int i = 0; i < _n; i++) {
     EEPROM_readAnything(_params[i].address, *_params[i].value);
+#if DEBUG_OUTPUT
     Serial.print("Loaded parameter");
     Serial.print(" ID: ");
     Serial.print(_params[i].id);
@@ -56,6 +57,7 @@ void Parameters::load_all()
       Serial.println(*(uint32_t*)_params[i].value);
     else
       Serial.println(*_params[i].value);
+#endif
   }
 }
 
@@ -82,20 +84,25 @@ param_t* Parameters::find(char* id) {
   key[PARAM_NAME_MAX] = 0; //add null terminator
   
   for(int i = 0; i < _n; i++) {
+#if DEBUG_OUTPUT
     Serial.print("Seaching: ");
     Serial.print(key);
     Serial.print(" against: ");
     Serial.println(_params[i].id);
+#endif
     
     if(strncmp(_params[i].id, key, PARAM_NAME_MAX) == 0) {
+#if DEBUG_OUTPUT
       Serial.print("MATCH index: ");
       Serial.println(i);
+#endif
       return &_params[i];
     }
     
   }
-  
+#if DEBUG_OUTPUT
   Serial.println("NOMATCH");
+#endif
   return NULL;
 }
 
@@ -108,12 +115,14 @@ param_t* Parameters::set(char* id, float value) {
   *(param->value) = value;
   save(*param);
 
+#if DEBUG_OUTPUT
   Serial.print("PARAM ");
   Serial.print(id);
   if(param->type == MAV_PARAM_TYPE_UINT32)
     Serial.println(*((uint32_t*)param->value));
   else
     Serial.println(*(param->value));
+#endif
   return param;
 }
 

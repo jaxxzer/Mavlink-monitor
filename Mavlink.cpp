@@ -1,6 +1,16 @@
 #include "Mavlink.h"
+#define DEBUG_OUTPUT 0
 
 Mavlink::Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *port, uint8_t channel) :
+status(STATUS_NOT_CONNECTED),
+last_master_recv_ms(0),
+_sysid(sysid),
+_compid(compid),
+_port(port),
+_channel(channel)
+{}
+
+Mavlink::Mavlink(uint8_t sysid, uint8_t compid, USBSerial *port, uint8_t channel) :
 status(STATUS_NOT_CONNECTED),
 last_master_recv_ms(0),
 _sysid(sysid),
@@ -44,6 +54,10 @@ void Mavlink::send_heartbeat() {
   int system_type = MAV_TYPE_MONITOR;
   int autopilot_type = MAV_AUTOPILOT_INVALID;
   
+#if DEBUG_OUTPUT
+  Serial.println("Sending Heartbeat");
+#endif
+
   // Initialize the required buffers 
   mavlink_message_t msg; 
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
@@ -107,8 +121,10 @@ void Mavlink::send_param(uint8_t index) {
   uint16_t len;
   
   param_t* param = params->get(index);
+#if DEBUG_OUTPUT
   Serial.print("Send type: ");
   Serial.println(param->type);
+#endif
 
   mavlink_msg_param_value_pack(_sysid, _compid, &msg, param->id, *(param->value), param->type, params->num_params(), param->index);
   len = mavlink_msg_to_send_buffer(buf, &msg);
@@ -167,7 +183,9 @@ void Mavlink::send_distance_sensor(uint16_t distance_cm) {
   ////////////////////
   //Power Status
   //////////////////////
-
+#if DEBUG_OUTPUT
+  Serial.println("Sending range");
+#endif
   //Arduino/ArduinoMAVLink/common/mavlink_msg_distance_sensor.h
 
   //static inline uint16_t mavlink_msg_distance_sensor_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
@@ -225,7 +243,7 @@ void Mavlink::comm_receive() {
     if(mavlink_parse_char(_channel, c, &msg, &status)) { 
       if(msg.sysid == 1 && msg.compid == 1)
         last_master_recv_ms = millis();
-
+#if DEBUG_OUTPUT
       //Got a valid message
       Serial.print("Got msg ");
       Serial.print(msg.msgid);                                   
@@ -233,6 +251,7 @@ void Mavlink::comm_receive() {
       Serial.print(msg.sysid);
       Serial.print(" , ");
       Serial.println(msg.compid);
+#endif
       
       // Handle message
       switch(msg.msgid) {
@@ -257,10 +276,12 @@ void Mavlink::comm_receive() {
           mavlink_param_set_t in;
           mavlink_msg_param_set_decode(&msg, &in);
           if(in.target_system == _sysid && in.target_component == _compid) {
+#if DEBUG_OUTPUT
             Serial.print("SET PARAM: ");
             Serial.print(in.param_id);
             Serial.print(" TYPE: ");
             Serial.println(in.param_type);
+#endif
             param_t* param = params->set(in.param_id, in.param_value);
             send_param(param->index);
           }
@@ -269,16 +290,18 @@ void Mavlink::comm_receive() {
         case MAVLINK_MSG_ID_STATUSTEXT: {
           mavlink_statustext_t in;
           mavlink_msg_statustext_decode(&msg, &in);
-          
+#if DEBUG_OUTPUT
           Serial.println(in.text);
+#endif
           
         } break;
 
         case MAVLINK_MSG_ID_PARAM_VALUE: {
           mavlink_param_value_t in;
           mavlink_msg_param_value_decode(&msg, &in);
-
+#if DEBUG_OUTPUT
           Serial.println(in.param_id);
+#endif
         } break;
         
         case MAVLINK_MSG_ID_MISSION_REQUEST_LIST: {
@@ -288,8 +311,10 @@ void Mavlink::comm_receive() {
         case MAVLINK_MSG_ID_COMMAND_LONG: {
           mavlink_command_long_t in;
           mavlink_msg_command_long_decode(&msg, &in);
+#if DEBUG_OUTPUT
           Serial.print("command# ");
           Serial.println(in.command);
+#endif
         }
       }
     } 

@@ -38,8 +38,10 @@ void Rangefinder_Ping::update() {
 		last_response_ms = tnow;
 		echo_received = false;
 		range = micros_to_cm(echo_end - echo_start);
+#if DEBUG_OUTPUT
 		Serial.print("R: ");
 		Serial.println(range);
+#endif
 	}
 
 	if(tnow > last_ping_ms + 1000/PINGRATE && (last_response_ms >= last_ping_ms || tnow > last_ping_ms + PING_TIMEOUT_MS)) { // Time to ping again

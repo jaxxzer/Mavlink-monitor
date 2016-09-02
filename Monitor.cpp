@@ -20,8 +20,8 @@ totaltime(0),
 
 params(),
 battery(),
-pixhawk(8, 1, &Serial1, MAVLINK_COMM_0),
-pixhawk1(9, 1, &Serial2, MAVLINK_COMM_1),
+pixhawk(8, 1, &Serial, MAVLINK_COMM_0),
+pixhawk1(9, 1, &Serial1, MAVLINK_COMM_1),
 pixhawk2(10, 1, &Serial3, MAVLINK_COMM_2),
 rangefinder(),
 notify(),
@@ -31,8 +31,8 @@ waterdetector()
 
 void Monitor::init() {
   
-  Serial.begin(921600);  //USB debugging
-  Serial1.begin(921600); //pixhawk
+  Serial.begin(115200);  //USB debugging
+  Serial1.begin(115200); //pixhawk
   Serial2.begin(921600); //esp
   Serial3.begin(921600); //rs232
 
@@ -48,12 +48,11 @@ void Monitor::init() {
   pixhawk.init(&params);
   pixhawk1.init(&params);
   pixhawk2.init(&params);
-  //rangefinder.init(&params);
+  rangefinder.init(&params);
   notify.init(&params);
   waterdetector.init(&params);
   
   params.load_all(); // must not be called until all parameters have been added
-
   Serial.println("ONLINE");
 }
 
@@ -70,11 +69,11 @@ void Monitor::run() {
     pixhawk.update();
     pixhawk1.update();
     pixhawk2.update();
-    //rangefinder.update();
+    rangefinder.update();
     notify.update();
     waterdetector.update();
 
-    notify.set_status(LED_MAPLE, pixhawk1.status);
+    notify.set_status(LED_MAPLE, pixhawk.status);
     //notify.set_status(LED_MAPLE, rangefinder.status);
     
     //30second loop
@@ -93,6 +92,8 @@ void Monitor::run() {
     // 5Hz loop
     if(tnow - last5Hz > 1000/5) {
       last5Hz = tnow;
+      pixhawk.send_distance_sensor(rangefinder.range);
+
     }
     
     // 10Hz loop
@@ -125,9 +126,8 @@ void Monitor::run() {
     if(tnow - lastS2 > 1000/SRATE2) {
       lastS2 = tnow;
 
-      if(rangefinder.status == STATUS_CONNECTED)
-        pixhawk.send_distance_sensor(rangefinder.range);
-    } 
+      //if(rangefinder.status == STATUS_CONNECTED)
+    }
 }
 
 

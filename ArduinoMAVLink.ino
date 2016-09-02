@@ -1,5 +1,4 @@
 #include "Monitor.h"
-
 Monitor m;
 
 void setup() {

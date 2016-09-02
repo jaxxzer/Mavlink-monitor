@@ -10,7 +10,7 @@
 class Mavlink {
   public:
     Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *port, uint8_t channel);
-
+    Mavlink(uint8_t sysid, uint8_t compid, USBSerial *port, uint8_t channel);
     void init(Parameters *_params);
     void update(void);
     
@@ -34,7 +34,7 @@ class Mavlink {
     uint32_t last_master_recv_ms;
     uint8_t _sysid;
     uint8_t _compid;
-    HardwareSerial *_port;
+    Stream *_port;
     uint8_t _channel;
 
 };
