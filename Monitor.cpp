@@ -26,7 +26,8 @@ pixhawk2(10, 1, &Serial3, MAVLINK_COMM_2),
 rangefinder(),
 notify(),
 waterdetector(),
-dipswitch()
+dipswitch(),
+tempsensor()
 
 {}
 
@@ -51,6 +52,7 @@ void Monitor::init() {
   notify.init(&params);
   waterdetector.init(&params);
   dipswitch.init();
+  tempsensor.init();
 
   for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
 	  notify.set(i, dipswitch.get_state(i));
@@ -85,6 +87,8 @@ void Monitor::run() {
     notify.update();
     waterdetector.update();
     dipswitch.update();
+    tempsensor.update();
+
     notify.set(LED_MAPLE, dipswitch.get_state(0));
     notify.set(LED_1, dipswitch.get_state(1));
     notify.set(LED_2, dipswitch.get_state(2));

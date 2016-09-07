@@ -32,7 +32,7 @@ void Dipswitch::update() {
 	last_update_ms = tnow;
 
 	for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
-    read_pole(i);
+		read_pole(i);
 	}
 }
 

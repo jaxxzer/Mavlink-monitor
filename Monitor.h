@@ -11,6 +11,7 @@
 #include "Notify.h"
 #include "WaterDetector.h"
 #include "Dipswitch.h"
+#include "TempSensor.h"
 
 
 class Monitor {
@@ -19,13 +20,14 @@ public:
 	Monitor();
 	Parameters params;
 	Mavlink pixhawk;
-  Mavlink pixhawk1;
-  Mavlink pixhawk2;
+	Mavlink pixhawk1;
+	Mavlink pixhawk2;
 	BatteryMonitor battery;
 	Rangefinder_Ping rangefinder;
-  Notify notify;
-  WaterDetector waterdetector;
-  Dipswitch dipswitch;
+	Notify notify;
+	WaterDetector waterdetector;
+	Dipswitch dipswitch;
+	TempSensor tempsensor;
 
 	void run(void);
 	void init(void);
@@ -41,22 +43,22 @@ public:
 	uint32_t BAUD_232;
 
 private:
-  ///////////////////////////
-  /////Scheduling////////////
-  ///////////////////////////
+	///////////////////////////
+	/////Scheduling////////////
+	///////////////////////////
 
-  uint16_t looptime; // performance
-  uint32_t last_us; // performance
-  uint32_t totaltime;
-  uint32_t loopcounter;
-  
-  uint32_t last30s;
-  uint32_t last1Hz;
-  uint32_t last5Hz;
-  uint32_t last10Hz;
-  uint32_t last50Hz;
-  uint32_t lastS1;
-  uint32_t lastS2;
+	uint16_t looptime; // performance
+	uint32_t last_us; // performance
+	uint32_t totaltime;
+	uint32_t loopcounter;
+
+	uint32_t last30s;
+	uint32_t last1Hz;
+	uint32_t last5Hz;
+	uint32_t last10Hz;
+	uint32_t last50Hz;
+	uint32_t lastS1;
+	uint32_t lastS2;
 
 };
 
