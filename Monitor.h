@@ -10,6 +10,7 @@
 #include "BatteryMonitor.h"
 #include "Notify.h"
 #include "WaterDetector.h"
+#include "Dipswitch.h"
 
 
 class Monitor {
@@ -24,6 +25,7 @@ public:
 	Rangefinder_Ping rangefinder;
   Notify notify;
   WaterDetector waterdetector;
+  Dipswitch dipswitch;
 
 	void run(void);
 	void init(void);

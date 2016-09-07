@@ -20,12 +20,13 @@ totaltime(0),
 
 params(),
 battery(),
-pixhawk(8, 1, &Serial, MAVLINK_COMM_0),
-pixhawk1(9, 1, &Serial1, MAVLINK_COMM_1),
+pixhawk(8, 1, &Serial1, MAVLINK_COMM_0),
+pixhawk1(9, 1, &Serial2, MAVLINK_COMM_1),
 pixhawk2(10, 1, &Serial3, MAVLINK_COMM_2),
 rangefinder(),
 notify(),
-waterdetector()
+waterdetector(),
+dipswitch()
 
 {}
 
@@ -33,11 +34,9 @@ void Monitor::init() {
   
   Serial.begin(115200);  //USB debugging
   Serial1.begin(115200); //pixhawk
-  Serial2.begin(921600); //esp
-  Serial3.begin(921600); //rs232
+  Serial2.begin(115200); //esp
+  Serial3.begin(115200); //rs232
 
-  delay(2000);
-  
   params.add("SRATE1", &SRATE1);
   params.add("SRATE2", &SRATE2);
   params.add("BAUD_PIX", &BAUD_PIX);
@@ -51,9 +50,22 @@ void Monitor::init() {
   rangefinder.init(&params);
   notify.init(&params);
   waterdetector.init(&params);
-  
+  dipswitch.init();
+
+  for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
+	  notify.set(i, dipswitch.get_state(i));
+  }
+  delay(2000);
+  for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
+	  notify.set(i, false);
+  }
+
   params.load_all(); // must not be called until all parameters have been added
   Serial.println("ONLINE");
+  notify.set_delay(LED_2, 5);
+
+  notify.set_delay(LED_3, 10);
+
 }
 
 void Monitor::run() {
@@ -72,9 +84,18 @@ void Monitor::run() {
     rangefinder.update();
     notify.update();
     waterdetector.update();
-
-    notify.set_status(LED_MAPLE, pixhawk.status);
-    //notify.set_status(LED_MAPLE, rangefinder.status);
+    dipswitch.update();
+    notify.set(LED_MAPLE, dipswitch.get_state(0));
+    notify.set(LED_1, dipswitch.get_state(1));
+    notify.set(LED_2, dipswitch.get_state(2));
+    notify.set(LED_3, dipswitch.get_state(3));
+//    notify.set_status(LED_MAPLE, pixhawk.status);
+//
+//    notify.set_status(LED_1, pixhawk.status);
+//    notify.set_status(LED_2, pixhawk.status);
+//
+//    notify.set_status(LED_3, pixhawk.status);
+    
     
     //30second loop
     if(tnow - last30s > 1000 * 10) {

@@ -12,10 +12,10 @@
 #define PIN_ADC_CURRENT 10
 
 // Onboard dip switch
-#define PIN_DIP_0 18 //LSB
-#define PIN_DIP_1 19
-#define PIN_DIP_2 21
-#define PIN_DIP_3 22 //MSB
+#define PIN_DIP_0 21 //LSB
+#define PIN_DIP_1 20
+#define PIN_DIP_2 19
+#define PIN_DIP_3 18 //MSB
 
 // Additional sensor inputs
 #define PIN_ADC_0 3
