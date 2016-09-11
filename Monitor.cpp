@@ -54,21 +54,14 @@ void Monitor::init() {
 
 	params.load_all(); // must not be called until all parameters have been added
 
-	////////////////////////
-	// Test that all leds are functioning
-	// Turn on one at a time
-	for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
-		notify.set(i, true);
-		delay(250);
-	}
 
-	delay(250);
 
-	// All leds off
-	for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
-		notify.set(i, false);
-	}
 
+  // Set mavlink sysid according to dipswitch state
+  pixhawk._sysid = dipswitch.get_state();
+  esp._sysid = dipswitch.get_state();
+  
+	///////////////////////
 	// Echo dipswitch states across leds
 	for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
 		notify.set(i, dipswitch.get_state(i));

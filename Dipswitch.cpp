@@ -17,7 +17,6 @@ void Dipswitch::init() {
 		pinMode(state[i].pin, INPUT_PULLUP);
 		read_pole(i);
 	}
-	update(); // read initial pole states
 }
 
 // read current pole states

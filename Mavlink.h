@@ -8,6 +8,7 @@
 #define LINK_TIMEOUT_MS 2000
 
 class Mavlink {
+  friend class Monitor;
   public:
     Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *port, uint8_t channel);
     Mavlink(uint8_t sysid, uint8_t compid, USBSerial *port, uint8_t channel);

@@ -33,7 +33,7 @@ void Notify::init(Parameters *_params) {
 	for(int i = 0; i < NOTIFY_NUM_LEDS; i++) {
 		if(leds[i].pin >= 0) {
 			set(i, true); // turn led on
-			delay(500);
+			delay(250);
 		}
 	}
 
@@ -43,6 +43,7 @@ void Notify::init(Parameters *_params) {
 			set(i, false); // init all LEDS off
 		}
 	}
+ delay(500);
 
 
 }

@@ -30,7 +30,7 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 
 typedef struct {
 	uint8_t             index;
-	char                id[16];
+	char                id[PARAM_NAME_MAX + 1];
 	uint32_t            address;
 	MAV_PARAM_TYPE      type;
 	float*              value;
