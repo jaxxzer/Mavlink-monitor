@@ -25,6 +25,8 @@ class Mavlink {
     void send_request_data_stream(void);
     void send_mission_count(uint8_t target_system, uint8_t target_component);
     void comm_receive(void);
+    void send_nav_cmd_do_trigger_control(void);
+
     Parameters* params;
 
     conn_status_t status;

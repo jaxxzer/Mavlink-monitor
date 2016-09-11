@@ -21,8 +21,7 @@ totaltime(0),
 params(),
 battery(),
 pixhawk(8, 1, &Serial1, MAVLINK_COMM_0),
-pixhawk1(9, 1, &Serial2, MAVLINK_COMM_1),
-pixhawk2(10, 1, &Serial3, MAVLINK_COMM_2),
+esp(9, 1, &Serial2, MAVLINK_COMM_1),
 rangefinder(),
 notify(),
 waterdetector(),
@@ -32,127 +31,132 @@ tempsensor()
 {}
 
 void Monitor::init() {
-  
-  Serial.begin(115200);  //USB debugging
-  Serial1.begin(115200); //pixhawk
-  Serial2.begin(115200); //esp
-  Serial3.begin(115200); //rs232
 
-  params.add("SRATE1", &SRATE1);
-  params.add("SRATE2", &SRATE2);
-  params.add("BAUD_PIX", &BAUD_PIX);
-  params.add("BAUD_ESP", &BAUD_ESP);
-  params.add("BAUD_232", &BAUD_232);
+	Serial.begin(115200);  //USB debugging
+	Serial1.begin(115200); //pixhawk
+	Serial2.begin(115200); //esp
+	Serial3.begin(115200); //rs232
 
-  battery.init(&params);
-  pixhawk.init(&params);
-  pixhawk1.init(&params);
-  pixhawk2.init(&params);
-  rangefinder.init(&params);
-  notify.init(&params);
-  waterdetector.init(&params);
-  dipswitch.init();
-  tempsensor.init();
+	params.add("SRATE1", &SRATE1);
+	params.add("SRATE2", &SRATE2);
+	params.add("BAUD_PIX", &BAUD_PIX);
+	params.add("BAUD_ESP", &BAUD_ESP);
+	params.add("BAUD_232", &BAUD_232);
 
-  for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
-	  notify.set(i, dipswitch.get_state(i));
-  }
-  delay(2000);
-  for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
-	  notify.set(i, false);
-  }
+	battery.init(&params);
+	pixhawk.init(&params);
+	esp.init(&params);
+	rangefinder.init(&params);
+	notify.init(&params);
+	waterdetector.init(&params);
+	dipswitch.init();
+	tempsensor.init();
 
-  params.load_all(); // must not be called until all parameters have been added
-  Serial.println("ONLINE");
-  notify.set_delay(LED_2, 5);
+	params.load_all(); // must not be called until all parameters have been added
 
-  notify.set_delay(LED_3, 10);
+	////////////////////////
+	// Test that all leds are functioning
+	// Turn on one at a time
+	for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
+		notify.set(i, true);
+		delay(250);
+	}
 
+	delay(250);
+
+	// All leds off
+	for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
+		notify.set(i, false);
+	}
+
+	// Echo dipswitch states across leds
+	for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
+		notify.set(i, dipswitch.get_state(i));
+	}
+
+	delay(1000);
+
+	// All leds off
+	for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {
+		notify.set(i, false);
+	}
+	////////////////////////
+
+	Serial.println("ONLINE");
 }
 
 void Monitor::run() {
-    uint32_t tnow = millis();
-    uint32_t tnow_us = micros();
-    uint32_t looptime = tnow_us - last_us;
-    last_us = tnow_us;
+	uint32_t tnow = millis();
+	uint32_t tnow_us = micros();
+	uint32_t looptime = tnow_us - last_us;
+	last_us = tnow_us;
 
-    loopcounter++;
-    totaltime+=looptime;
+	loopcounter++;
+	totaltime+=looptime;
 
-    battery.update();
-    pixhawk.update();
-    pixhawk1.update();
-    pixhawk2.update();
-    rangefinder.update();
-    notify.update();
-    waterdetector.update();
-    dipswitch.update();
-    tempsensor.update();
+	battery.update();
+	pixhawk.update();
+	esp.update();
+	rangefinder.update();
+	notify.update();
+	waterdetector.update();
+	dipswitch.update();
+	tempsensor.update();
 
-    notify.set(LED_MAPLE, dipswitch.get_state(0));
-    notify.set(LED_1, dipswitch.get_state(1));
-    notify.set(LED_2, dipswitch.get_state(2));
-    notify.set(LED_3, dipswitch.get_state(3));
-//    notify.set_status(LED_MAPLE, pixhawk.status);
-//
-//    notify.set_status(LED_1, pixhawk.status);
-//    notify.set_status(LED_2, pixhawk.status);
-//
-//    notify.set_status(LED_3, pixhawk.status);
-    
-    
-    //30second loop
-    if(tnow - last30s > 1000 * 10) {
-      last30s = tnow;
-    }
+	notify.set_status(LED_MAPLE, pixhawk.status);
+	notify.set_status(LED_1, esp.status);
 
-    // 1Hz loop
-    if(tnow - last1Hz > 1000/1) {
-      last1Hz = tnow;
-      pixhawk.send_heartbeat();
-      pixhawk1.send_heartbeat();
-      pixhawk2.send_heartbeat();
-    }
+	//30second loop
+	if(tnow - last30s > 1000 * 10) {
+        esp.send_nav_cmd_do_trigger_control();
+		last30s = tnow;
+	}
 
-    // 5Hz loop
-    if(tnow - last5Hz > 1000/5) {
-      last5Hz = tnow;
-      pixhawk.send_distance_sensor(rangefinder.range);
+	// 1Hz loop
+	if(tnow - last1Hz > 1000/1) {
+		last1Hz = tnow;
+		pixhawk.send_heartbeat();
+		esp.send_heartbeat();
+	}
 
-    }
-    
-    // 10Hz loop
-    if(tnow - last10Hz > 1000/10) {
-      last10Hz = tnow;
-    }
-    
-    if(tnow - last50Hz > 1000/50) {
-      last50Hz = tnow;
-    }
+	// 5Hz loop
+	if(tnow - last5Hz > 1000/5) {
+		last5Hz = tnow;
+		pixhawk.send_distance_sensor(rangefinder.range);
 
-    // Custom rate 1
-    if(SRATE1 > 20) SRATE1 = 20;
-    if(SRATE1 < 1) SRATE1 = 1;
-    if(tnow - lastS1 > 1000/SRATE1) {
-      lastS1 = tnow;
+	}
 
-      uint32_t load = totaltime/loopcounter; // Average looptime in us since last calculated
-      totaltime = 0;
-      loopcounter = 0;
-      
-      pixhawk.send_system_status(load, waterdetector.detected);
-      pixhawk1.send_system_status(load, waterdetector.detected);
-      pixhawk2.send_system_status(load, waterdetector.detected);
-    }
+	// 10Hz loop
+	if(tnow - last10Hz > 1000/10) {
 
-    // Custom rate 2
-    if(SRATE2 > 20) SRATE2 = 20;
-    if(SRATE2 < 1) SRATE2 = 1;
-    if(tnow - lastS2 > 1000/SRATE2) {
-      lastS2 = tnow;
+		last10Hz = tnow;
+	}
 
-      //if(rangefinder.status == STATUS_CONNECTED)
-    }
+	if(tnow - last50Hz > 1000/50) {
+		last50Hz = tnow;
+	}
+
+	// Custom rate 1
+	if(SRATE1 > 20) SRATE1 = 20;
+	if(SRATE1 < 1) SRATE1 = 1;
+	if(tnow - lastS1 > 1000/SRATE1) {
+		lastS1 = tnow;
+
+		uint32_t load = totaltime/loopcounter; // Average looptime in us since last calculated
+		totaltime = 0;
+		loopcounter = 0;
+
+		pixhawk.send_system_status(load, waterdetector.detected);
+	}
+
+	// Custom rate 2
+	if(SRATE2 > 20) SRATE2 = 20;
+	if(SRATE2 < 1) SRATE2 = 1;
+	if(tnow - lastS2 > 1000/SRATE2) {
+		lastS2 = tnow;
+
+		//if(rangefinder.status == STATUS_CONNECTED)
+	}
 }
 
 

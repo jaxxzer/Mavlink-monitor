@@ -20,8 +20,7 @@ public:
 	Monitor();
 	Parameters params;
 	Mavlink pixhawk;
-	Mavlink pixhawk1;
-	Mavlink pixhawk2;
+	Mavlink esp;
 	BatteryMonitor battery;
 	Rangefinder_Ping rangefinder;
 	Notify notify;

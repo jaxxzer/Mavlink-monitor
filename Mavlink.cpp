@@ -1,5 +1,5 @@
 #include "Mavlink.h"
-#define DEBUG_OUTPUT 0
+#define DEBUG_OUTPUT 1
 
 Mavlink::Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *port, uint8_t channel) :
 status(STATUS_NOT_CONNECTED),
@@ -229,6 +229,28 @@ void Mavlink::send_mission_count(uint8_t target_system, uint8_t target_component
 
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   _port->write(buf, len);
+}
+
+void Mavlink::send_nav_cmd_do_trigger_control() {
+//	static inline uint16_t mavlink_msg_command_long_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+//							       uint8_t target_system, uint8_t target_component, uint16_t command, uint8_t confirmation, float param1, float param2, float param3, float param4, float param5, float param6, float param7)
+
+	  mavlink_message_t msg;
+	  uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	  mavlink_msg_command_long_pack(_sysid, _compid, &msg,
+	              0, 0, MAV_CMD_DO_TRIGGER_CONTROL,
+				  0,
+				  0.0,
+				  0.0,
+				  0.0,
+				  0.0,
+				  0.0,
+				  0.0,
+				  0.0);
+
+	  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+	  _port->write(buf, len);
 }
 
 void Mavlink::comm_receive() { 
