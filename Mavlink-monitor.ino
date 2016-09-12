@@ -1,13 +1,13 @@
 #include "Monitor.h"
-Monitor m;
+Monitor monitor;
 
 void setup() {
-  m = Monitor();
+  monitor = Monitor();
 }
 
 void loop() {
-  m.init();
+  monitor.init();
   while(true) {
-    m.run();
+    monitor.run();
   }
 }

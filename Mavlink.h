@@ -27,6 +27,7 @@ class Mavlink {
     void send_mission_count(uint8_t target_system, uint8_t target_component);
     void comm_receive(void);
     void send_nav_cmd_do_trigger_control(void);
+    void send_nav_cmd_preflight_reboot_shutdown(void);
 
     Parameters* params;
 

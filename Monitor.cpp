@@ -26,7 +26,8 @@ rangefinder(),
 notify(),
 waterdetector(),
 dipswitch(),
-tempsensor()
+tempsensor(),
+button()
 
 {}
 
@@ -51,6 +52,7 @@ void Monitor::init() {
 	waterdetector.init(&params);
 	dipswitch.init();
 	tempsensor.init();
+  button.init();
 
 	params.load_all(); // must not be called until all parameters have been added
 
@@ -95,7 +97,8 @@ void Monitor::run() {
 	waterdetector.update();
 	dipswitch.update();
 	tempsensor.update();
-
+  button.update();
+  
 	notify.set_status(LED_MAPLE, pixhawk.status);
 	notify.set_status(LED_1, esp.status);
 

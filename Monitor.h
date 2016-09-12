@@ -12,6 +12,7 @@
 #include "WaterDetector.h"
 #include "Dipswitch.h"
 #include "TempSensor.h"
+#include "Button.h"
 
 
 class Monitor {
@@ -27,6 +28,7 @@ public:
 	WaterDetector waterdetector;
 	Dipswitch dipswitch;
 	TempSensor tempsensor;
+	Button button;
 
 	void run(void);
 	void init(void);
