@@ -5,7 +5,7 @@
 Rangefinder::Rangefinder() :
 range(0),
 PINGRATE(0),
-RANGE_ENABLED(0),
+RANGE_ENABLE(0),
 params(NULL),
 status(STATUS_NOT_CONNECTED),
 response_received(false),
@@ -17,14 +17,14 @@ void Rangefinder::init(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
 		params->add("PINGRATE", &PINGRATE);
-		params->add("RANGE_ENABLE", &RANGE_ENABLED);
+		params->add("RANGE_ENABLE", &RANGE_ENABLE);
 	}
 }
 
 void Rangefinder::update() {
 
   // exit if rangefinder is not enabled
-  if(PINGRATE == 0 || !RANGE_ENABLED) {
+  if(PINGRATE == 0 || !RANGE_ENABLE) {
     status = STATUS_NOT_CONNECTED;
     return;
   }

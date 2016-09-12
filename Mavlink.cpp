@@ -1,5 +1,5 @@
 #include "Mavlink.h"
-#define DEBUG_OUTPUT 0
+#define DEBUG_OUTPUT 1
 
 Mavlink::Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *port, uint8_t channel) :
 status(STATUS_NOT_CONNECTED),
@@ -55,7 +55,7 @@ void Mavlink::send_heartbeat() {
   int autopilot_type = MAV_AUTOPILOT_INVALID;
   
 #if DEBUG_OUTPUT
-  Serial.println("Sending Heartbeat");
+  //Serial.println("Sending Heartbeat");
 #endif
 
   // Initialize the required buffers 
@@ -122,8 +122,8 @@ void Mavlink::send_param(uint8_t index) {
   
   param_t* param = params->get(index);
 #if DEBUG_OUTPUT
-  Serial.print("Send type: ");
-  Serial.println(param->type);
+  Serial.print("Sending param: ");
+  Serial.println(param->id);
 #endif
 
   mavlink_msg_param_value_pack(_sysid, _compid, &msg, param->id, *(param->value), param->type, params->num_params(), param->index);
@@ -179,12 +179,12 @@ void Mavlink::send_power_status() {
   _port->write(buf, len);
 }
 
-void Mavlink::send_distance_sensor(uint16_t distance_cm) {
+void Mavlink::send_distance_sensor(uint16_t distance_cm, uint16_t distance_cm_filt) {
   ////////////////////
   //Power Status
   //////////////////////
 #if DEBUG_OUTPUT
-  Serial.println("Sending range");
+  //Serial.println("Sending range");
 #endif
   //Arduino/ArduinoMAVLink/common/mavlink_msg_distance_sensor.h
 
@@ -195,7 +195,7 @@ void Mavlink::send_distance_sensor(uint16_t distance_cm) {
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
   
   mavlink_msg_distance_sensor_pack(_sysid, _compid, &msg,
-                   master_time, 30, 500, distance_cm, MAV_DISTANCE_SENSOR_ULTRASOUND, 1, MAV_SENSOR_ROTATION_PITCH_90, 0);
+                   master_time, 30, distance_cm_filt, distance_cm, MAV_DISTANCE_SENSOR_ULTRASOUND, 1, MAV_SENSOR_ROTATION_PITCH_90, 0);
                    
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   _port->write(buf, len);
@@ -318,9 +318,20 @@ void Mavlink::comm_receive() {
   
         //https://pixhawk.ethz.ch/mavlink/#PARAM_SET
         case MAVLINK_MSG_ID_PARAM_SET: {
+
   
           mavlink_param_set_t in;
           mavlink_msg_param_set_decode(&msg, &in);
+                    #if DEBUG_OUTPUT
+          Serial.print("Got PARAM_SET: target=");
+          Serial.print(in.target_system);
+          Serial.print(":");
+          Serial.println(in.target_component);
+          Serial.print("I am: ");
+          Serial.print(_sysid);
+          Serial.print(":");
+          Serial.print(_compid);
+          #endif
           if(in.target_system == _sysid && in.target_component == _compid) {
 #if DEBUG_OUTPUT
             Serial.print("SET PARAM: ");

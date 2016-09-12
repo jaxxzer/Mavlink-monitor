@@ -22,7 +22,7 @@ class Mavlink {
     void send_text(char* text);
     void send_battery_status(void);
     void send_power_status(void);
-    void send_distance_sensor(uint16_t distance_cm);
+    void send_distance_sensor(uint16_t distance_cm, uint16_t distance_cm_filt);
     void send_request_data_stream(void);
     void send_mission_count(uint8_t target_system, uint8_t target_component);
     void comm_receive(void);

@@ -20,7 +20,7 @@ totaltime(0),
 
 params(),
 battery(),
-pixhawk(8, 1, &Serial1, MAVLINK_COMM_0),
+pixhawk(8, 1, &Serial, MAVLINK_COMM_0),
 esp(9, 1, &Serial2, MAVLINK_COMM_1),
 rangefinder(),
 notify(),
@@ -56,11 +56,8 @@ void Monitor::init() {
 
 	params.load_all(); // must not be called until all parameters have been added
 
-
-
-
   // Set mavlink sysid according to dipswitch state
-  pixhawk._sysid = dipswitch.get_state();
+  //pixhawk._sysid = dipswitch.get_state();
   esp._sysid = dipswitch.get_state();
   
 	///////////////////////
@@ -118,7 +115,7 @@ void Monitor::run() {
 	// 5Hz loop
 	if(tnow - last5Hz > 1000/5) {
 		last5Hz = tnow;
-		pixhawk.send_distance_sensor(rangefinder.range);
+		
 
 	}
 
@@ -126,6 +123,13 @@ void Monitor::run() {
 	if(tnow - last10Hz > 1000/10) {
 
 		last10Hz = tnow;
+    if(rangefinder.RANGE_ENABLE) {
+      if(rangefinder.LPF_ENABLE) {
+        pixhawk.send_distance_sensor(rangefinder.range, rangefinder.range_filt.get());
+      } else {
+          pixhawk.send_distance_sensor(rangefinder.range, rangefinder.range);
+      }
+    }
 	}
 
 	if(tnow - last50Hz > 1000/50) {

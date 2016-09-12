@@ -3,6 +3,7 @@
 
 #include "Notify.h"
 #include "Param.h"
+#include "LowPassFilter.h"
 
 #define RANGEFINDER_TIMEOUT_MS 10000
 
@@ -12,10 +13,12 @@ public:
 
 	Rangefinder();
 
+  LowPassFilterFloat range_filt;
+
 	void init(Parameters *_params);
 	void update(void);
 	uint32_t PINGRATE;
-	uint32_t RANGE_ENABLED;
+	uint32_t RANGE_ENABLE;
 
 	//TODO parse and store as uint16_t
 	float range;
