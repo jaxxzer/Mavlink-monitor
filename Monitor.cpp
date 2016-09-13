@@ -43,6 +43,7 @@ void Monitor::init() {
 	params.add("BAUD_PIX", &BAUD_PIX);
 	params.add("BAUD_ESP", &BAUD_ESP);
 	params.add("BAUD_232", &BAUD_232);
+  params.add("PIC_INTERVAL", &PIC_INTERVAL);
 
 	battery.init(&params);
 	pixhawk.init(&params);
@@ -101,7 +102,7 @@ void Monitor::run() {
 
 	//30second loop
 	if(tnow - last30s > 1000 * 10) {
-        esp.send_nav_cmd_do_trigger_control();
+    esp.send_nav_cmd_do_trigger_control(PIC_INTERVAL);
 		last30s = tnow;
 	}
 
@@ -110,6 +111,7 @@ void Monitor::run() {
 		last1Hz = tnow;
 		pixhawk.send_heartbeat();
 		esp.send_heartbeat();
+    
 	}
 
 	// 5Hz loop
@@ -125,7 +127,7 @@ void Monitor::run() {
 		last10Hz = tnow;
     if(rangefinder.RANGE_ENABLE) {
       if(rangefinder.LPF_ENABLE) {
-        pixhawk.send_distance_sensor(rangefinder.range, rangefinder.range_filt.get());
+        pixhawk.send_distance_sensor(rangefinder.range_filt.get(), rangefinder.range);
       } else {
           pixhawk.send_distance_sensor(rangefinder.range, rangefinder.range);
       }

@@ -51,7 +51,7 @@ void Mavlink::send_heartbeat() {
   //Heartbeat
   //////////////////////
   // Define the system type (see mavlink_types.h for list of possible types) 
-  int system_type = MAV_TYPE_MONITOR;
+  int system_type = MAV_TYPE_SUBMARINE;
   int autopilot_type = MAV_AUTOPILOT_INVALID;
   
 #if DEBUG_OUTPUT
@@ -231,7 +231,7 @@ void Mavlink::send_mission_count(uint8_t target_system, uint8_t target_component
   _port->write(buf, len);
 }
 
-void Mavlink::send_nav_cmd_do_trigger_control() {
+void Mavlink::send_nav_cmd_do_trigger_control(uint32_t pic_interval_ms) {
 //	static inline uint16_t mavlink_msg_command_long_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
 //							       uint8_t target_system, uint8_t target_component, uint16_t command, uint8_t confirmation, float param1, float param2, float param3, float param4, float param5, float param6, float param7)
 
@@ -241,7 +241,7 @@ void Mavlink::send_nav_cmd_do_trigger_control() {
 	  mavlink_msg_command_long_pack(_sysid, _compid, &msg,
 	              0, 0, MAV_CMD_DO_TRIGGER_CONTROL,
 				  0,
-				  0.0,
+				  pic_interval_ms,
 				  0.0,
 				  0.0,
 				  0.0,
