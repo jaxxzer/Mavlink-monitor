@@ -51,7 +51,7 @@ void Mavlink::send_heartbeat() {
   //Heartbeat
   //////////////////////
   // Define the system type (see mavlink_types.h for list of possible types) 
-  int system_type = MAV_TYPE_SUBMARINE;
+  int system_type = MAV_TYPE_MONITOR;
   int autopilot_type = MAV_AUTOPILOT_INVALID;
   
 #if DEBUG_OUTPUT

@@ -13,12 +13,14 @@ public:
 
 	Rangefinder();
 
-  LowPassFilterFloat range_filt;
+	LowPassFilterFloat range_filt;
 
 	void init(Parameters *_params);
 	void update(void);
 	uint32_t PINGRATE;
 	uint32_t RANGE_ENABLE;
+	  uint32_t LPF_ENABLE;
+	  float LPF_CUTOFF;
 
 	//TODO parse and store as uint16_t
 	float range;

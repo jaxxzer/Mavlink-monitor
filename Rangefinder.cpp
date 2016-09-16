@@ -10,7 +10,8 @@ params(NULL),
 status(STATUS_NOT_CONNECTED),
 response_received(false),
 last_request_ms(0),
-last_response_ms(0)
+last_response_ms(0),
+range_filt(0.25)
 {}
 
 void Rangefinder::init(Parameters *_params) {
@@ -18,6 +19,8 @@ void Rangefinder::init(Parameters *_params) {
 	if(params != NULL) {
 		params->add("PINGRATE", &PINGRATE);
 		params->add("RANGE_ENABLE", &RANGE_ENABLE);
+	    params->add("LPF_ENABLE", &LPF_ENABLE);
+	    params->add("LPF_CUTOFF", &LPF_CUTOFF);
 	}
 }
 
@@ -80,7 +83,10 @@ void Rangefinder::range_receive() {
         
       case 'm':
         distance[index] = '\0';
-        range = String(distance).toFloat();
+        range = String(distance).toFloat() * 100;
+        if(LPF_ENABLE) {
+          range_filt.apply(range, (tnow-last_response_ms) / 1000.0f);
+        }
         last_response_ms = tnow;
       case '\r':
       case '\n':

@@ -20,7 +20,7 @@ totaltime(0),
 
 params(),
 battery(),
-pixhawk(8, 1, &Serial, MAVLINK_COMM_0),
+pixhawk(8, 1, &Serial1, MAVLINK_COMM_0),
 esp(9, 1, &Serial2, MAVLINK_COMM_1),
 rangefinder(),
 notify(),
@@ -99,6 +99,7 @@ void Monitor::run() {
   
 	notify.set_status(LED_MAPLE, pixhawk.status);
 	notify.set_status(LED_1, esp.status);
+	notify.set_status(LED_2, rangefinder.status);
 
 	//30second loop
 	if(tnow - last30s > 1000 * 10) {

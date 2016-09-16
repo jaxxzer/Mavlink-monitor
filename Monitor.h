@@ -23,7 +23,7 @@ public:
 	Mavlink pixhawk;
 	Mavlink esp;
 	BatteryMonitor battery;
-	Rangefinder_Ping rangefinder;
+	Rangefinder rangefinder;
 	Notify notify;
 	WaterDetector waterdetector;
 	Dipswitch dipswitch;
