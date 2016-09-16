@@ -20,7 +20,7 @@ totaltime(0),
 
 params(),
 battery(),
-pixhawk(8, 1, &Serial1, MAVLINK_COMM_0),
+pixhawk(8, 1, &Serial, MAVLINK_COMM_0),
 esp(9, 1, &Serial2, MAVLINK_COMM_1),
 rangefinder(),
 notify(),
@@ -44,6 +44,7 @@ void Monitor::init() {
 	params.add("BAUD_ESP", &BAUD_ESP);
 	params.add("BAUD_232", &BAUD_232);
   params.add("PIC_INTERVAL", &PIC_INTERVAL);
+  //params.add("DEBUG_LEVEL", &DEBUG_LEVEL);
 
 	battery.init(&params);
 	pixhawk.init(&params);
@@ -58,9 +59,17 @@ void Monitor::init() {
 	params.load_all(); // must not be called until all parameters have been added
 
   // Set mavlink sysid according to dipswitch state
-  //pixhawk._sysid = dipswitch.get_state();
-  esp._sysid = dipswitch.get_state();
+	// id 0 is broadcast, id 1 is pixhawk itself, we can be (0~7) + 2 = 2~9
+  pixhawk._sysid = (dipswitch.get_state() & 0b00000111) + 2;
+  esp._sysid = (dipswitch.get_state() & 0b00000111) + 2;
   
+  // dipswitch pole #3 (zero indexed) determines output of main mavlink
+  if(dipswitch.get_state() & 0b00001000) {
+	  pixhawk.set_port(&Serial); // mavlink through USBSerial
+  } else {
+	  pixhawk.set_port(&Serial1); // mavlink through PA9 and PA10 HardwareSerial
+  }
+
 	///////////////////////
 	// Echo dipswitch states across leds
 	for(int i = 0; i < DIPSWITCH_NUM_POLES; i++) {

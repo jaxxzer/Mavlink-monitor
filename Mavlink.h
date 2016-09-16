@@ -27,6 +27,7 @@ class Mavlink {
     void comm_receive(void);
     void send_nav_cmd_do_trigger_control(uint32_t pic_interval_ms);
     void send_nav_cmd_preflight_reboot_shutdown(void);
+    void set_port(Stream *port) { _port = port; };
     int system_type = MAV_TYPE_MONITOR;
     int autopilot_type = MAV_AUTOPILOT_INVALID;
 
