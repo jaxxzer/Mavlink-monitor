@@ -10,8 +10,7 @@
 class Mavlink {
   friend class Monitor;
   public:
-    Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *port, uint8_t channel);
-    Mavlink(uint8_t sysid, uint8_t compid, USBSerial *port, uint8_t channel);
+    Mavlink(uint8_t sysid, uint8_t compid, Stream *port, uint8_t channel);
     void init(Parameters *_params);
     void update(void);
     
@@ -28,6 +27,8 @@ class Mavlink {
     void comm_receive(void);
     void send_nav_cmd_do_trigger_control(uint32_t pic_interval_ms);
     void send_nav_cmd_preflight_reboot_shutdown(void);
+    int system_type = MAV_TYPE_MONITOR;
+    int autopilot_type = MAV_AUTOPILOT_INVALID;
 
     Parameters* params;
 

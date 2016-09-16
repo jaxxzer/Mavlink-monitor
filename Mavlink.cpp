@@ -1,22 +1,16 @@
 #include "Mavlink.h"
 #define DEBUG_OUTPUT 1
 
-Mavlink::Mavlink(uint8_t sysid, uint8_t compid, HardwareSerial *port, uint8_t channel) :
+Mavlink::Mavlink(uint8_t sysid, uint8_t compid, Stream *port, uint8_t channel) :
 status(STATUS_NOT_CONNECTED),
 last_master_recv_ms(0),
 _sysid(sysid),
 _compid(compid),
 _port(port),
-_channel(channel)
-{}
-
-Mavlink::Mavlink(uint8_t sysid, uint8_t compid, USBSerial *port, uint8_t channel) :
-status(STATUS_NOT_CONNECTED),
-last_master_recv_ms(0),
-_sysid(sysid),
-_compid(compid),
-_port(port),
-_channel(channel)
+_channel(channel),
+master_time(0),
+system_type(MAV_TYPE_MONITOR),
+autopilot_type(MAV_AUTOPILOT_INVALID)
 {}
 
 void Mavlink::init(Parameters *_params) {
@@ -40,10 +34,7 @@ void Mavlink::update(void) {
 
   if(status != STATUS_CONNECTED) {
     status = STATUS_CONNECTED;
-    send_request_data_stream();
   }
-
-
 }
 
 void Mavlink::send_heartbeat() {
@@ -51,8 +42,6 @@ void Mavlink::send_heartbeat() {
   //Heartbeat
   //////////////////////
   // Define the system type (see mavlink_types.h for list of possible types) 
-  int system_type = MAV_TYPE_MONITOR;
-  int autopilot_type = MAV_AUTOPILOT_INVALID;
   
 #if DEBUG_OUTPUT
   //Serial.println("Sending Heartbeat");
@@ -201,6 +190,7 @@ void Mavlink::send_distance_sensor(uint16_t distance_cm, uint16_t distance_cm_fi
   _port->write(buf, len);
 }
 
+// Send pixhawk request to stop sending extraneous messages intended for a GCS
 void Mavlink::send_request_data_stream() {
 
   mavlink_message_t msg;
@@ -285,7 +275,7 @@ void Mavlink::comm_receive() {
 
     //try to get a new message 
     if(mavlink_parse_char(_channel, c, &msg, &status)) { 
-      // Accept messages from pixhawk {1,1} or from esp on same system
+      // Accept messages from pixhawk {1,1} or from esp {_sysid,2} on same system
       if(msg.sysid == 1 && msg.compid == 1 ||
           msg.sysid == _sysid)
         last_master_recv_ms = millis();
@@ -310,6 +300,7 @@ void Mavlink::comm_receive() {
           mavlink_msg_system_time_decode(&msg, &in);
  
           master_time = in.time_boot_ms;
+          send_request_data_stream();
         } break;
         
         case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
@@ -340,7 +331,7 @@ void Mavlink::comm_receive() {
             Serial.println(in.param_type);
 #endif
             param_t* param = params->set(in.param_id, in.param_value);
-            send_param(param->index);
+            send_param(param->index); // Acknowledge request by sending updated parameter value
           }
         } break;
 
