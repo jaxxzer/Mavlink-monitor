@@ -52,7 +52,7 @@ bool Dipswitch::read_pole(uint8_t pole) {
 
 uint8_t Dipswitch::get_state() {
 	uint8_t mask = 0;
-	for(int i = 0; i < DIPSWITCH_NUM_POLES && i < 8; i++) {
+	for(int i = DIPSWITCH_NUM_POLES - 1; i >= 0; i--) {
 		mask |= state[i].state << i;
 	}
 	return mask;
