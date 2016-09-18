@@ -158,7 +158,7 @@ void Monitor::run() {
 		totaltime = 0;
 		loopcounter = 0;
 
-		pixhawk.send_system_status(load, waterdetector.detected);
+		pixhawk.send_system_status(load);
 	}
 
 	// Custom rate 2

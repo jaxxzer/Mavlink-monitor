@@ -1,5 +1,9 @@
 #include "Mavlink.h"
-#define DEBUG_OUTPUT 1
+#include "Monitor.h"
+
+#define DEBUG_OUTPUT 0
+
+extern Monitor monitor;
 
 Mavlink::Mavlink(uint8_t sysid, uint8_t compid, Stream *port, uint8_t channel) :
 status(STATUS_NOT_CONNECTED),
@@ -65,7 +69,7 @@ void Mavlink::send_heartbeat() {
   _port->write(buf, len);
 }
 
-void Mavlink::send_system_status(uint16_t looptime, bool water_detected) {
+void Mavlink::send_system_status(uint16_t looptime) {
   ////////////////////
   //System Status
   //////////////////////
@@ -79,17 +83,18 @@ void Mavlink::send_system_status(uint16_t looptime, bool water_detected) {
 //                   uint16_t errors_count2, uint16_t errors_count3, uint16_t errors_count4)
   mavlink_message_t msg; 
   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
   uint32_t sensor_health = 0;
-  sensor_health |= !water_detected * 0x20000000;
+  sensor_health |= !monitor.waterdetector.detected * 0x20000000;
   
-//  uint16_t voltage = measureVoltage();
-//  uint16_t current = measureCurrent();
-      float percent_remaining = 0;
-//  float percent_remaining = (100 * (voltage - (cells * CELL_VMIN))) / (cells * (CELL_VMAX - CELL_VMIN));
   mavlink_msg_sys_status_pack(_sysid, _compid, &msg,
                    0, 0x20000000, 
-                   sensor_health, looptime, 0, 0,
-                   (int8_t)percent_remaining, 0, 0, 0,
+                   sensor_health,
+				   looptime,
+				   monitor.battery.voltage_filt.get(),
+				   monitor.battery.current_filt.get(),
+                   monitor.battery.remaining(),
+				   0, 0, 0,
                    0, 0, 0);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   _port->write(buf, len);
