@@ -1,6 +1,8 @@
 #ifndef MAPLE_MINI_H
 #define MAPLE_MINI_H
 
+#define ADC_RESOLUTION 4096
+
 // Onboard LEDS
 #define PIN_LED_MAPLE 33
 #define PIN_LED_1 15

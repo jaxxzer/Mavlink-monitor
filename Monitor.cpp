@@ -40,11 +40,11 @@ void Monitor::init() {
 
 	params.add("SRATE1", &SRATE1);
 	params.add("SRATE2", &SRATE2);
-	params.add("BAUD_PIX", &BAUD_PIX);
-	params.add("BAUD_ESP", &BAUD_ESP);
-	params.add("BAUD_232", &BAUD_232);
-  params.add("PIC_INTERVAL", &PIC_INTERVAL);
-  //params.add("DEBUG_LEVEL", &DEBUG_LEVEL);
+//	params.add("BAUD_PIX", &BAUD_PIX);
+//	params.add("BAUD_ESP", &BAUD_ESP);
+//	params.add("BAUD_232", &BAUD_232);
+	params.add("PIC_INTERVAL", &PIC_INTERVAL);
+	//params.add("DEBUG_LEVEL", &DEBUG_LEVEL);
 
 	battery.init(&params);
 	pixhawk.init(&params);
@@ -54,21 +54,21 @@ void Monitor::init() {
 	waterdetector.init(&params);
 	dipswitch.init();
 	tempsensor.init();
-  button.init();
+	button.init();
 
 	params.load_all(); // must not be called until all parameters have been added
 
-  // Set mavlink sysid according to dipswitch state
+	// Set mavlink sysid according to dipswitch state
 	// id 0 is broadcast, id 1 is pixhawk itself, we can be (0~7) + 2 = 2~9
-  pixhawk._sysid = (dipswitch.get_state() & 0b00000111) + 2;
-  esp._sysid = (dipswitch.get_state() & 0b00000111) + 2;
-  
-  // dipswitch pole #3 (zero indexed) determines output of main mavlink
-  if(dipswitch.get_state() & 0b00001000) {
-	  pixhawk.set_port(&Serial); // mavlink through USBSerial
-  } else {
-	  pixhawk.set_port(&Serial1); // mavlink through PA9 and PA10 HardwareSerial
-  }
+	pixhawk._sysid = (dipswitch.get_state() & 0b00000111) + 2;
+	esp._sysid = (dipswitch.get_state() & 0b00000111) + 2;
+
+	// dipswitch pole #3 (zero indexed) determines output of main mavlink
+	if(dipswitch.get_state() & 0b00001000) {
+		pixhawk.set_port(&Serial); // mavlink through USBSerial
+	} else {
+		pixhawk.set_port(&Serial1); // mavlink through PA9 and PA10 HardwareSerial
+	}
 
 	///////////////////////
 	// Echo dipswitch states across leds
@@ -104,15 +104,15 @@ void Monitor::run() {
 	waterdetector.update();
 	dipswitch.update();
 	tempsensor.update();
-  button.update();
-  
+	button.update();
+
 	notify.set_status(LED_MAPLE, pixhawk.status);
 	notify.set_status(LED_1, esp.status);
 	notify.set_status(LED_2, rangefinder.status);
 
 	//30second loop
 	if(tnow - last30s > 1000 * 10) {
-    esp.send_nav_cmd_do_trigger_control(PIC_INTERVAL);
+		esp.send_nav_cmd_do_trigger_control(PIC_INTERVAL);
 		last30s = tnow;
 	}
 
@@ -121,13 +121,13 @@ void Monitor::run() {
 		last1Hz = tnow;
 		pixhawk.send_heartbeat();
 		esp.send_heartbeat();
-    
+
 	}
 
 	// 5Hz loop
 	if(tnow - last5Hz > 1000/5) {
 		last5Hz = tnow;
-		
+
 
 	}
 
@@ -135,13 +135,13 @@ void Monitor::run() {
 	if(tnow - last10Hz > 1000/10) {
 
 		last10Hz = tnow;
-    if(rangefinder.RANGE_ENABLE) {
-      if(rangefinder.LPF_ENABLE) {
-        pixhawk.send_distance_sensor(rangefinder.range_filt.get(), rangefinder.range);
-      } else {
-          pixhawk.send_distance_sensor(rangefinder.range, rangefinder.range);
-      }
-    }
+		if(rangefinder.RANGE_ENABLE) {
+			if(rangefinder.LPF_ENABLE) {
+				pixhawk.send_distance_sensor(rangefinder.range_filt.get(), rangefinder.range);
+			} else {
+				pixhawk.send_distance_sensor(rangefinder.range, rangefinder.range);
+			}
+		}
 	}
 
 	if(tnow - last50Hz > 1000/50) {
@@ -166,8 +166,6 @@ void Monitor::run() {
 	if(SRATE2 < 1) SRATE2 = 1;
 	if(tnow - lastS2 > 1000/SRATE2) {
 		lastS2 = tnow;
-
-		//if(rangefinder.status == STATUS_CONNECTED)
 	}
 }
 
