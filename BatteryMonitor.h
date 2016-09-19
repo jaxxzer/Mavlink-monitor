@@ -21,7 +21,7 @@ class BatteryMonitor {
     uint16_t measure_voltage(void);
     uint16_t measure_current(void);
     uint8_t count_cells(void); // Determine the number of cells in lipo battery
-    uint16_t remaining(void); // Percent remaining * 100
+    uint8_t remaining(void); // Percent remaining * 100
 
     Parameters *params;
     

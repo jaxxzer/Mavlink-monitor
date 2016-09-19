@@ -1,6 +1,6 @@
 #include "BatteryMonitor.h"
 #include "MapleMini.h"
-
+#define BATTMONITOR_DEBUG 0
 BatteryMonitor::BatteryMonitor() :
 _voltage_pin(PIN_ADC_VOLTAGE),
 _current_pin(PIN_ADC_CURRENT),
@@ -8,20 +8,20 @@ _last_update_ms(0),
 _update_interval_ms(100),
 cells(0)
 {
-	  pinMode(_voltage_pin, INPUT);
-	  pinMode(_current_pin, INPUT);
+	pinMode(_voltage_pin, INPUT);
+	pinMode(_current_pin, INPUT);
 }
 
 void BatteryMonitor::init_params(Parameters *_params) {
-  params = _params;
-  if(params != NULL) {
-	  params->add("V_SCALE", &V_SCALE);
-	  params->add("C_SCALE", &C_SCALE);
-	  params->add("V_OFFSET", &V_OFFSET);
-	  params->add("C_OFFSET", &C_OFFSET);
-	  params->add("V_LPFCUT", &V_LPFCUT);
-	  params->add("C_LPFCUT", &C_LPFCUT);
-  }
+	params = _params;
+	if(params != NULL) {
+		params->add("V_SCALE", &V_SCALE);
+		params->add("C_SCALE", &C_SCALE);
+		params->add("V_OFFSET", &V_OFFSET);
+		params->add("C_OFFSET", &C_OFFSET);
+		params->add("V_LPFCUT", &V_LPFCUT);
+		params->add("C_LPFCUT", &C_LPFCUT);
+	}
 }
 
 void BatteryMonitor::init() {
@@ -51,33 +51,52 @@ void BatteryMonitor::update() {
 	voltage_filt.apply(voltage, (tnow - _last_update_ms) / 1000.0f);
 	current_filt.apply(current, (tnow - _last_update_ms) / 1000.0f);
 
+#if BATTMONITOR_DEBUG
+	Serial.print("BATTMONITOR: cells: ");
+	Serial.print(cells);
+	Serial.print("\tv: ");
+	Serial.print(voltage);
+	Serial.print("\tvfilt: ");
+	Serial.print(voltage_filt.get());
+	Serial.print("\tremain: ");
+	Serial.println(remaining());
+#endif
+
 	_last_update_ms = tnow;
 }
 
 uint16_t BatteryMonitor::measure_voltage() {
-  if(_voltage_pin == -1) {
-    return 0;
-  }
+	if(_voltage_pin == -1) {
+		return 0;
+	}
 
-  float v = analogRead(_voltage_pin);
-  v = (v * V_SCALE) + V_OFFSET;
-  return (uint16_t)v;
+	float v = analogRead(_voltage_pin);
+#if BATTMONITOR_DEBUG
+	Serial.print("BATTMONITOR: raw vadc: ");
+	Serial.println(v);
+#endif
+	v = (v * V_SCALE) + V_OFFSET;
+	return (uint16_t)v;
 }
 
 uint16_t BatteryMonitor::measure_current() {
-  if(_current_pin == -1) {
-    return 0;
-  }
+	if(_current_pin == -1) {
+		return 0;
+	}
 
-  float c = analogRead(_current_pin);
-  c = (c * C_SCALE) + C_OFFSET;
-  return (uint16_t)c;
+	float c = analogRead(_current_pin);
+#if BATTMONITOR_DEBUG
+	Serial.print("BATTMONITOR: raw cadc: ");
+	Serial.println(c);
+#endif
+	c = (c * C_SCALE) + C_OFFSET;
+	return (uint16_t)c;
 }
 
 // count the number of cells, should be called once only during init as it is blocking
 // This only works after current and voltage has been calculated
 uint8_t BatteryMonitor::count_cells() {
-	uint8_t num_samples = 8;
+	uint8_t num_samples = 15;
 	float vsum = 0;
 
 	for(int i = 0; i < num_samples; i++) {
@@ -87,13 +106,17 @@ uint8_t BatteryMonitor::count_cells() {
 
 	uint16_t v = vsum / num_samples;
 	uint8_t cells = v / CELL_VMIN;
+#if BATTMONITOR_DEBUG
+	Serial.print("BATTMONITOR: Cells: ");
+	Serial.println(cells);
+#endif
 
 	return constrain(cells, 3, 4); // Works for 3 or 4 cells
 }
 
 // Measure the percent remaining taken as the interval between max charge and min charge
-// Returns percent * 100 (0 ~ 10000)
-uint16_t BatteryMonitor::remaining() {
-	uint16_t remaining = (CELL_VMAX - (voltage_filt.get() / cells))  / (CELL_VMAX - CELL_VMIN);
-	return constrain(remaining, 0, 10000);
+// Returns percent (0 ~ 100)
+uint8_t BatteryMonitor::remaining() {
+	uint8_t remaining = 100.0f * ((CELL_VMAX - CELL_VMIN) - (CELL_VMAX - (voltage_filt.get() / cells)))  / (CELL_VMAX - CELL_VMIN);
+	return constrain(remaining, 0, 100);
 }

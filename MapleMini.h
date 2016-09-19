@@ -12,8 +12,8 @@
 #define PIN_LED_3 17
 
 // Power module battery monitoring
-#define PIN_ADC_VOLTAGE 11
-#define PIN_ADC_CURRENT 10
+#define PIN_ADC_VOLTAGE 10
+#define PIN_ADC_CURRENT 11
 
 // Onboard dip switch
 #define PIN_DIP_0 21 //LSB
