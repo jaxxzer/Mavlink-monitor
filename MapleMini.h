@@ -1,7 +1,9 @@
 #ifndef MAPLE_MINI_H
 #define MAPLE_MINI_H
 
+#define VCC 3.3f
 #define ADC_RESOLUTION 4096
+#define ADC_VOLTAGE_SCALAR (VCC / ADC_RESOLUTION)
 
 // Onboard LEDS
 #define PIN_LED_MAPLE 33
@@ -29,5 +31,10 @@
 #define PIN_TRIGGER 28
 
 #define PIN_BUTTON 32
+
+#define PIN_WATERDETECTOR PIN_ADC_0
+#define PIN_TEMPSENSOR PIN_ADC_1
+
+
 
 #endif

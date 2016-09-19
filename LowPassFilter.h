@@ -19,11 +19,14 @@
 /// @brief	A class to implement a low pass filter without losing precision even for int types
 ///         the downside being that it's a little slower as it internally uses a float
 ///         and it consumes an extra 4 bytes of memory to hold the constant gain
-#pragma once
+#ifndef LOWPASSFILTER_H
+#define LOWPASSFILTER_H
+
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+
 
 #define M_PI      (3.141592653589793f)
 #define M_2PI         (M_PI * 2)
-#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 
 // DigitalLPF implements the filter math
 template <class T>
@@ -86,3 +89,5 @@ LowPassFilter<T>::LowPassFilter(float cutoff_freq) : _cutoff_freq(cutoff_freq) {
 typedef LowPassFilter<int>      LowPassFilterInt;
 typedef LowPassFilter<long>     LowPassFilterLong;
 typedef LowPassFilter<float>    LowPassFilterFloat;
+
+#endif

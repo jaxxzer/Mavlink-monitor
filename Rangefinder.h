@@ -15,27 +15,28 @@ public:
 
 	LowPassFilterFloat range_filt;
 
-	void init(Parameters *_params);
+	void init_params(Parameters *_params);
+	void init(void);
 	void update(void);
+	void constrain_params(void);
+	Parameters *params;
+
 	uint32_t PINGRATE;
 	uint32_t RANGE_ENABLE;
-	  uint32_t LPF_ENABLE;
-	  float LPF_CUTOFF;
+	uint32_t LPF_ENABLE;
+	float LPF_CUTOFF;
 
 	//TODO parse and store as uint16_t
 	float range;
 
-	Parameters *params;
-
-  conn_status_t status;
-
+	conn_status_t status;
 
 private:
 	void range_receive(void);
 	void range_request(void);
 	uint32_t last_request_ms;
-  bool response_received;
-  uint32_t last_response_ms;
+	bool response_received;
+	uint32_t last_response_ms;
 };
 
 #endif

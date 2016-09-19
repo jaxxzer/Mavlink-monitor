@@ -15,38 +15,44 @@ void echo_receive() {
 }
 
 Rangefinder_Ping::Rangefinder_Ping() :
-last_ping_ms(0),
-last_response_ms(0),
-range_filt(0.25)
-{}
-
-void Rangefinder_Ping::init(Parameters *_params) {
-	params = _params;
-	if(params != NULL) {
-		params->add("PINGRATE", &PINGRATE);
-		params->add("RANGE_ENABLE", &RANGE_ENABLE);
-    params->add("LPF_ENABLE", &LPF_ENABLE);
-    params->add("LPF_CUTOFF", &LPF_CUTOFF);
-	}
+		last_ping_ms(0),
+		last_response_ms(0),
+		range_filt(0.25)
+{
 	pinMode(PIN_TRIGGER, OUTPUT);
 	pinMode(PIN_ECHO, INPUT);
 	digitalWrite(PIN_TRIGGER, LOW);
 	attachInterrupt(PIN_ECHO, echo_receive, CHANGE);
 }
 
+void Rangefinder_Ping::init_params(Parameters *_params) {
+	params = _params;
+	if(params != NULL) {
+		params->add("PINGRATE", &PINGRATE);
+		params->add("RANGE_ENABLE", &RANGE_ENABLE);
+		params->add("LPF_ENABLE", &LPF_ENABLE);
+		params->add("LPF_CUTOFF", &LPF_CUTOFF);
+	}
+
+}
+
+void Rangefinder_Ping::init() {
+
+}
+
 void Rangefinder_Ping::update() {
 
- if(LPF_ENABLE && LPF_CUTOFF != range_filt.get_cutoff_freq()) {
-  range_filt.set_cutoff_frequency(LPF_CUTOFF);
- }
+	if(LPF_ENABLE && LPF_CUTOFF != range_filt.get_cutoff_freq()) {
+		range_filt.set_cutoff_frequency(LPF_CUTOFF);
+	}
 	uint32_t tnow = millis();
 	if(echo_received) {
 		echo_received = false;
 		range = micros_to_cm(echo_end - echo_start);
-    if(LPF_ENABLE) {
-      range_filt.apply(range, (tnow-last_response_ms) / 1000.0f);
-    }
-    last_response_ms = tnow;
+		if(LPF_ENABLE) {
+			range_filt.apply(range, (tnow-last_response_ms) / 1000.0f);
+		}
+		last_response_ms = tnow;
 
 #if DEBUG_OUTPUT
 		Serial.print("R: ");

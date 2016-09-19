@@ -12,7 +12,10 @@ class BatteryMonitor {
   public:
     BatteryMonitor();
 
-    void init(Parameters *_params);
+    // Add parameters
+    void init_params(Parameters *_params);
+
+    void init(void);
     void update(void);
 
     uint16_t measure_voltage(void);

@@ -11,7 +11,8 @@ class Mavlink {
   friend class Monitor;
   public:
     Mavlink(uint8_t sysid, uint8_t compid, Stream *port, uint8_t channel);
-    void init(Parameters *_params);
+    void init_params(Parameters *_params);
+    void init();
     void update(void);
     
     void send_heartbeat(void);
@@ -28,7 +29,8 @@ class Mavlink {
     void send_nav_cmd_do_trigger_control(uint32_t pic_interval_ms);
     void send_nav_cmd_preflight_reboot_shutdown(void);
     void set_port(Stream *port) { _port = port; };
-    int system_type = MAV_TYPE_MONITOR;
+    void set_mav_type(MAV_TYPE type) { system_type = type; };
+    MAV_TYPE system_type = MAV_TYPE_MONITOR;
     int autopilot_type = MAV_AUTOPILOT_INVALID;
 
     Parameters* params;

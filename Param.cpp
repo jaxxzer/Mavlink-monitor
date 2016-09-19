@@ -1,5 +1,5 @@
 #include "Param.h"
-
+#define DEBUG_OUTPUT 1
 Parameters::Parameters() :
 _n(0)
 {

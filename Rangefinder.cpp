@@ -14,7 +14,7 @@ last_response_ms(0),
 range_filt(0.25)
 {}
 
-void Rangefinder::init(Parameters *_params) {
+void Rangefinder::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
 		params->add("PINGRATE", &PINGRATE);
@@ -22,6 +22,10 @@ void Rangefinder::init(Parameters *_params) {
 	    params->add("LPF_ENABLE", &LPF_ENABLE);
 	    params->add("LPF_CUTOFF", &LPF_CUTOFF);
 	}
+}
+
+void Rangefinder::init() {
+	constrain_params();
 }
 
 void Rangefinder::update() {
@@ -99,5 +103,12 @@ void Rangefinder::range_receive() {
         break;
     }
   }
+}
+
+void Rangefinder::constrain_params() {
+	PINGRATE = constrain(PINGRATE, 0, 20);
+	RANGE_ENABLE = constrain(RANGE_ENABLE, 0, 1);
+	LPF_ENABLE = constrain(LPF_ENABLE, 0, 1);
+	LPF_CUTOFF = constrain(LPF_CUTOFF, 0.01f, 20.0f);
 }
 

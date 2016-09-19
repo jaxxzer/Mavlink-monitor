@@ -5,10 +5,14 @@ BatteryMonitor::BatteryMonitor() :
 _voltage_pin(PIN_ADC_VOLTAGE),
 _current_pin(PIN_ADC_CURRENT),
 _last_update_ms(0),
-_update_interval_ms(100)
-{}
+_update_interval_ms(100),
+cells(0)
+{
+	  pinMode(_voltage_pin, INPUT);
+	  pinMode(_current_pin, INPUT);
+}
 
-void BatteryMonitor::init(Parameters *_params) {
+void BatteryMonitor::init_params(Parameters *_params) {
   params = _params;
   if(params != NULL) {
 	  params->add("V_SCALE", &V_SCALE);
@@ -18,10 +22,10 @@ void BatteryMonitor::init(Parameters *_params) {
 	  params->add("V_LPFCUT", &V_LPFCUT);
 	  params->add("C_LPFCUT", &C_LPFCUT);
   }
+}
 
-  pinMode(_voltage_pin, INPUT);
-  pinMode(_current_pin, INPUT);
-  cells = count_cells();
+void BatteryMonitor::init() {
+	cells = count_cells();
 }
 
 void BatteryMonitor::update() {

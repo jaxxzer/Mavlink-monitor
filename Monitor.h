@@ -64,6 +64,8 @@ private:
 	uint32_t loopcounter;
 
 	uint32_t last30s;
+	uint32_t last10s;
+	uint32_t last5s;
 	uint32_t last1Hz;
 	uint32_t last5Hz;
 	uint32_t last10Hz;

@@ -4,7 +4,9 @@ Monitor::Monitor() :
 looptime(0),
 last_us(0),
 last30s(100),
-last1Hz(200),
+last10s(150),
+last5s(200),
+last1Hz(250),
 last5Hz(300),
 last10Hz(400),
 last50Hz(500),
@@ -37,6 +39,7 @@ void Monitor::init() {
 	Serial1.begin(115200); //pixhawk
 	Serial2.begin(115200); //esp
 	Serial3.begin(115200); //rs232
+	//delay(5000);
 
 	params.add("SRATE1", &SRATE1);
 	params.add("SRATE2", &SRATE2);
@@ -44,19 +47,24 @@ void Monitor::init() {
 //	params.add("BAUD_ESP", &BAUD_ESP);
 //	params.add("BAUD_232", &BAUD_232);
 	params.add("PIC_INTERVAL", &PIC_INTERVAL);
-	//params.add("DEBUG_LEVEL", &DEBUG_LEVEL);
+//  params.add("DEBUG_LEVEL", &DEBUG_LEVEL);
 
-	battery.init(&params);
-	pixhawk.init(&params);
-	esp.init(&params);
-	rangefinder.init(&params);
+	pixhawk.init_params(&params);
+	esp.init_params(&params);
+	battery.init_params(&params);
+	tempsensor.init_params(&params);
+	rangefinder.init_params(&params);
+	waterdetector.init_params(&params);
 	notify.init(&params);
-	waterdetector.init(&params);
 	dipswitch.init();
-	tempsensor.init();
 	button.init();
 
 	params.load_all(); // must not be called until all parameters have been added
+
+	tempsensor.init();
+	battery.init();
+	rangefinder.init();
+	waterdetector.init();
 
 	// Set mavlink sysid according to dipswitch state
 	// id 0 is broadcast, id 1 is pixhawk itself, we can be (0~7) + 2 = 2~9
@@ -66,6 +74,8 @@ void Monitor::init() {
 	// dipswitch pole #3 (zero indexed) determines output of main mavlink
 	if(dipswitch.get_state() & 0b00001000) {
 		pixhawk.set_port(&Serial); // mavlink through USBSerial
+		pixhawk.set_mav_type(MAV_TYPE_SUBMARINE);
+		delay(5000); // allow time to open port before streaming
 	} else {
 		pixhawk.set_port(&Serial1); // mavlink through PA9 and PA10 HardwareSerial
 	}
@@ -110,10 +120,19 @@ void Monitor::run() {
 	notify.set_status(LED_1, esp.status);
 	notify.set_status(LED_2, rangefinder.status);
 
-	//30second loop
-	if(tnow - last30s > 1000 * 10) {
-		esp.send_nav_cmd_do_trigger_control(PIC_INTERVAL);
+	//30 second loop
+	if(tnow - last30s > 1000 * 30) {
 		last30s = tnow;
+	}
+
+	// 10 second loop
+	if(tnow - last10s > 1000 * 10) {
+		last10s = tnow;
+		esp.send_nav_cmd_do_trigger_control(PIC_INTERVAL);
+	}
+	// 5 second loop
+	if(tnow - last5s > 1000 * 5) {
+		last5s = tnow;
 	}
 
 	// 1Hz loop
@@ -127,21 +146,13 @@ void Monitor::run() {
 	// 5Hz loop
 	if(tnow - last5Hz > 1000/5) {
 		last5Hz = tnow;
-
-
 	}
 
 	// 10Hz loop
 	if(tnow - last10Hz > 1000/10) {
 
 		last10Hz = tnow;
-		if(rangefinder.RANGE_ENABLE) {
-			if(rangefinder.LPF_ENABLE) {
-				pixhawk.send_distance_sensor(rangefinder.range_filt.get(), rangefinder.range);
-			} else {
-				pixhawk.send_distance_sensor(rangefinder.range, rangefinder.range);
-			}
-		}
+
 	}
 
 	if(tnow - last50Hz > 1000/50) {
@@ -166,6 +177,13 @@ void Monitor::run() {
 	if(SRATE2 < 1) SRATE2 = 1;
 	if(tnow - lastS2 > 1000/SRATE2) {
 		lastS2 = tnow;
+		if(rangefinder.RANGE_ENABLE) {
+			if(rangefinder.LPF_ENABLE) {
+				pixhawk.send_distance_sensor(rangefinder.range_filt.get(), rangefinder.range);
+			} else {
+				pixhawk.send_distance_sensor(rangefinder.range, rangefinder.range);
+			}
+		}
 	}
 }
 

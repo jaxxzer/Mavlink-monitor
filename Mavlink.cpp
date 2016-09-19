@@ -17,8 +17,14 @@ system_type(MAV_TYPE_MONITOR),
 autopilot_type(MAV_AUTOPILOT_INVALID)
 {}
 
-void Mavlink::init(Parameters *_params) {
-  params = _params;
+void Mavlink::init_params(Parameters *_params) {
+	params = _params;
+	if(_params == NULL) {
+		Serial.println("Null params!");
+	}
+}
+
+void Mavlink::init() {
 
 }
 
@@ -95,7 +101,8 @@ void Mavlink::send_system_status(uint16_t looptime) {
 				   monitor.battery.current_filt.get(),
                    monitor.battery.remaining(),
 				   0, 0, 0,
-                   0, 0, 0);
+                   0, 0,
+				   monitor.tempsensor.temperature);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   _port->write(buf, len);
 }

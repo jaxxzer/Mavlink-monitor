@@ -14,13 +14,14 @@ class Rangefinder_Ping
 {
 public:
 	Rangefinder_Ping();
-	void init(Parameters *_params);
+	void init_params(Parameters *_params);
+	void init(void);
 	void update(void);
-  LowPassFilterFloat range_filt;
+	LowPassFilterFloat range_filt;
 	uint32_t PINGRATE;
 	uint32_t RANGE_ENABLE;
-  uint32_t LPF_ENABLE;
-  float LPF_CUTOFF;
+	uint32_t LPF_ENABLE;
+	float LPF_CUTOFF;
 	uint16_t range;
 	Parameters *params;
 
