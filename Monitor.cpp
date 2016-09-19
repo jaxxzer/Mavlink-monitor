@@ -41,12 +41,12 @@ void Monitor::init() {
 	Serial3.begin(115200); //rs232
 	//delay(5000);
 
-	params.add("SRATE1", &SRATE1);
-	params.add("SRATE2", &SRATE2);
+	params.add("SRATE1", &SRATE1, 0, 50);
+	params.add("SRATE2", &SRATE2, 0, 50);
 //	params.add("BAUD_PIX", &BAUD_PIX);
 //	params.add("BAUD_ESP", &BAUD_ESP);
 //	params.add("BAUD_232", &BAUD_232);
-	params.add("PIC_INTERVAL", &PIC_INTERVAL);
+	params.add("PIC_INTERVAL", &PIC_INTERVAL, 0, 50000);
 //  params.add("DEBUG_LEVEL", &DEBUG_LEVEL);
 
 	pixhawk.init_params(&params);
@@ -160,9 +160,7 @@ void Monitor::run() {
 	}
 
 	// Custom rate 1
-	if(SRATE1 > 20) SRATE1 = 20;
-	if(SRATE1 < 1) SRATE1 = 1;
-	if(tnow - lastS1 > 1000/SRATE1) {
+	if(SRATE1 > 0 && tnow - lastS1 > 1000/SRATE1) {
 		lastS1 = tnow;
 
 		uint32_t load = totaltime/loopcounter; // Average looptime in us since last calculated
@@ -173,9 +171,7 @@ void Monitor::run() {
 	}
 
 	// Custom rate 2
-	if(SRATE2 > 20) SRATE2 = 20;
-	if(SRATE2 < 1) SRATE2 = 1;
-	if(tnow - lastS2 > 1000/SRATE2) {
+	if(SRATE2 > 0 && tnow - lastS2 > 1000/SRATE2) {
 		lastS2 = tnow;
 		if(rangefinder.RANGE_ENABLE) {
 			if(rangefinder.LPF_ENABLE) {

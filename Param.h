@@ -30,18 +30,20 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 
 typedef struct {
 	uint8_t             index;
-	char                id[PARAM_NAME_MAX + 1];
-	uint32_t            address;
-	MAV_PARAM_TYPE      type;
+	char                id[PARAM_NAME_MAX + 1]; // Name
+	uint32_t            address; // EEPROM address
+	MAV_PARAM_TYPE      type; // should we treat this as a float or uint32_t?
 	float*              value;
+	float				min; // minimum valid value
+	float				max; // maximum valid value
 } param_t;
 
 class Parameters {
 public:
 	Parameters();
 
-	param_t* add(char* id, float* var);
-	param_t* add(char* id, uint32_t* var);
+	param_t* add(char* id, float* var, float min, float max);
+	param_t* add(char* id, uint32_t* var, uint32_t min, uint32_t max);
 
 	void load_all(void);
 
@@ -51,6 +53,7 @@ public:
 	param_t* find(char *id);
 	param_t* get(uint8_t index);
 	param_t* set(char* id, float value);
+	void constrain_param(uint8_t index);
 
 	uint8_t num_params(void) const { return _n; };
 

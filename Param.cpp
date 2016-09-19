@@ -7,7 +7,7 @@ _n(0)
 }
 
 
-param_t* Parameters::add(char* id, float* var)
+param_t* Parameters::add(char* id, float* var, float min, float max)
 {
 	if(_n >= MAX_PARAMS) {
 		return NULL;
@@ -18,12 +18,14 @@ param_t* Parameters::add(char* id, float* var)
 	_params[_n].type = MAV_PARAM_TYPE_REAL32;
 	_params[_n].address = _n * sizeof(float);
 	_params[_n].index = _n;
+	_params[_n].min = min;
+	_params[_n].max = max;
 	_params[_n].value = var;
 
 	return &_params[_n++];
 }
 
-param_t* Parameters::add(char* id, uint32_t* var)
+param_t* Parameters::add(char* id, uint32_t* var, uint32_t min, uint32_t max)
 {
 	if(_n >= MAX_PARAMS) {
 		return NULL;
@@ -34,6 +36,8 @@ param_t* Parameters::add(char* id, uint32_t* var)
 	_params[_n].type = MAV_PARAM_TYPE_UINT32;
 	_params[_n].address = _n * sizeof(float);
 	_params[_n].index = _n;
+	_params[_n].min = min;
+	_params[_n].max = max;
 	_params[_n].value = (float*)var;
 
 	return &_params[_n++];
@@ -43,17 +47,24 @@ void Parameters::load_all()
 {
 	for(int i = 0; i < _n; i++) {
 		EEPROM_readAnything(_params[i].address, *_params[i].value);
+		
+		constrain_param(i);
+
 #if PARAM_DEBUG
 		Serial.print("Loaded parameter");
-		Serial.print(" ID: ");
+		Serial.print("\tID: ");
 		Serial.print(_params[i].id);
-		Serial.print(" Index: ");
+		Serial.print("\tIndex: ");
 		Serial.print(_params[i].index);
-		Serial.print(" Value: ");
+		Serial.print("\tValue: ");
 		if(_params[i].type == MAV_PARAM_TYPE_UINT32)
-			Serial.println(*(uint32_t*)_params[i].value);
+			Serial.print(*(uint32_t*)_params[i].value);
 		else
-			Serial.println(*_params[i].value);
+			Serial.print(*_params[i].value);
+		Serial.print("\tmin: ");
+		Serial.print(_params[i].min);
+		Serial.print("\tmax: ");
+		Serial.println(_params[i].max);
 #endif
 	}
 }
@@ -110,6 +121,7 @@ param_t* Parameters::set(char* id, float value) {
 		return NULL;
 
 	*(param->value) = value;
+	constrain_param(param->index);
 	save(*param);
 
 #if PARAM_DEBUG
@@ -128,6 +140,46 @@ param_t* Parameters::get(uint8_t index) {
 		return NULL;
 	}
 	return &_params[index];
+
+}
+
+void Parameters::constrain_param(uint8_t index)	{
+	if(index < 0 || index > _n-1) {
+		return; // out of range
+	}
+
+//	Serial.print("CONSTRAIN: ");
+//	Serial.print(index);
+//	Serial.print("\t Value: ");
+	if(_params[index].type == MAV_PARAM_TYPE_UINT32) {
+		Serial.println(*((uint32_t*)_params[index].value));
+		if(*((uint32_t*)_params[index].value) < _params[index].min) {
+			uint32_t min = (uint32_t)_params[index].min;
+//			Serial.println("Param value under min!");
+
+			*(_params[index].value) = *(float*)&min;
+
+
+//			Serial.print("Param should now be: ");
+//			Serial.println(min);
+
+		} else if(*((uint32_t*)_params[index].value) > _params[index].max) {
+
+			uint32_t max = (uint32_t)_params[index].max;
+
+//			Serial.println("Param value exceeds max!");
+			*(_params[index].value) = *(float*)&max;
+//			Serial.print("Param should now be: ");
+//			Serial.println(max);
+		}
+	}else {
+//		Serial.println(*(_params[index].value));
+		if(*(_params[index].value) < _params[index].min) {
+			*(_params[index].value) = _params[index].min;
+		} else if(*(_params[index].value) > _params[index].max) {
+			*(_params[index].value) = _params[index].max;
+		}
+	}
 
 }
 

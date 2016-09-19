@@ -11,14 +11,14 @@ _update_interval_ms(1000)
 void TempSensor::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
-		params->add("T_SCALE", &T_SCALE);
-		params->add("T_OFFSET", &T_OFFSET);
+		params->add("T_SCALE", &T_SCALE, 0, 100);
+		params->add("T_OFFSET", &T_OFFSET, 0, 100);
 	}
 }
 
 // Called once on program startup, after parameters have been loaded
 void TempSensor::init() {
-	constrain_params();
+	//constrain_params();
 }
 
 void TempSensor::update() {

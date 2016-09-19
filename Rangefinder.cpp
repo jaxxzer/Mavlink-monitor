@@ -17,15 +17,15 @@ range_filt(0.25)
 void Rangefinder::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
-		params->add("PINGRATE", &PINGRATE);
-		params->add("RANGE_ENABLE", &RANGE_ENABLE);
-	    params->add("LPF_ENABLE", &LPF_ENABLE);
-	    params->add("LPF_CUTOFF", &LPF_CUTOFF);
+		params->add("PINGRATE", &PINGRATE, 0, 20);
+		params->add("RANGE_ENABLE", &RANGE_ENABLE, 0, 1);
+	    params->add("LPF_ENABLE", &LPF_ENABLE, 0, 1);
+	    params->add("LPF_CUTOFF", &LPF_CUTOFF, 0.001, 100);
 	}
 }
 
 void Rangefinder::init() {
-	constrain_params();
+	//constrain_params();
 }
 
 void Rangefinder::update() {
