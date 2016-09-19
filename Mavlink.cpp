@@ -343,6 +343,9 @@ void Mavlink::comm_receive() {
 					Serial.println(in.param_type);
 #endif
 					param_t* param = params->set(in.param_id, in.param_value);
+					if(*param->value != in.param_value) { // Submitted value was out of range and had to be constrained
+						send_text("Invalid param value!");
+					}
 					send_param(param->index); // Acknowledge request by sending updated parameter value
 				}
 			} break;

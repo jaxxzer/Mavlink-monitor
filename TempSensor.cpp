@@ -11,8 +11,8 @@ _update_interval_ms(1000)
 void TempSensor::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
-		params->add("T_SCALE", &T_SCALE, 0, 100);
-		params->add("T_OFFSET", &T_OFFSET, 0, 100);
+		params->add("T_SCALE", &T_SCALE, 0, 100, 10);
+		params->add("T_OFFSET", &T_OFFSET, 0, 100, 0);
 	}
 }
 

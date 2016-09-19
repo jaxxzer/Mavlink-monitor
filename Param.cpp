@@ -7,7 +7,7 @@ _n(0)
 }
 
 
-param_t* Parameters::add(char* id, float* var, float min, float max)
+param_t* Parameters::add(char* id, float* var, float min, float max, float def)
 {
 	if(_n >= MAX_PARAMS) {
 		return NULL;
@@ -21,11 +21,12 @@ param_t* Parameters::add(char* id, float* var, float min, float max)
 	_params[_n].min = min;
 	_params[_n].max = max;
 	_params[_n].value = var;
+	_params[_n].def = def;
 
 	return &_params[_n++];
 }
 
-param_t* Parameters::add(char* id, uint32_t* var, uint32_t min, uint32_t max)
+param_t* Parameters::add(char* id, uint32_t* var, uint32_t min, uint32_t max, uint32_t def)
 {
 	if(_n >= MAX_PARAMS) {
 		return NULL;
@@ -39,6 +40,7 @@ param_t* Parameters::add(char* id, uint32_t* var, uint32_t min, uint32_t max)
 	_params[_n].min = min;
 	_params[_n].max = max;
 	_params[_n].value = (float*)var;
+	_params[_n].def = def;
 
 	return &_params[_n++];
 }
@@ -48,7 +50,15 @@ void Parameters::load_all()
 	for(int i = 0; i < _n; i++) {
 		EEPROM_readAnything(_params[i].address, *_params[i].value);
 		
-		constrain_param(i);
+		if(!constrain_param(i)) {
+			if(_params[i].type == MAV_PARAM_TYPE_UINT32) {
+				uint32_t def = (uint32_t)_params[i].def;
+				*(_params[i].value) = *(float*)&def;
+			} else {
+				*(_params[i].value) = _params[i].def;
+			}
+			constrain_param(i); // Sanity check
+		}
 
 #if PARAM_DEBUG
 		Serial.print("Loaded parameter");
@@ -143,32 +153,36 @@ param_t* Parameters::get(uint8_t index) {
 
 }
 
-void Parameters::constrain_param(uint8_t index)	{
+// Constrain parameter value to min/max range
+// Return true if param value within correct range
+// Return false if param value had to be constrained
+bool Parameters::constrain_param(uint8_t index)	{
 	if(index < 0 || index > _n-1) {
-		return; // out of range
+		return false; // out of range
 	}
 
 //	Serial.print("CONSTRAIN: ");
 //	Serial.print(index);
 //	Serial.print("\t Value: ");
 	if(_params[index].type == MAV_PARAM_TYPE_UINT32) {
-		Serial.println(*((uint32_t*)_params[index].value));
+		//Serial.println(*((uint32_t*)_params[index].value));
 		if(*((uint32_t*)_params[index].value) < _params[index].min) {
+
 			uint32_t min = (uint32_t)_params[index].min;
-//			Serial.println("Param value under min!");
-
 			*(_params[index].value) = *(float*)&min;
+			return false;
 
-
+			//			Serial.println("Param value under min!");
 //			Serial.print("Param should now be: ");
 //			Serial.println(min);
 
 		} else if(*((uint32_t*)_params[index].value) > _params[index].max) {
 
 			uint32_t max = (uint32_t)_params[index].max;
-
-//			Serial.println("Param value exceeds max!");
 			*(_params[index].value) = *(float*)&max;
+			return false;
+
+			//			Serial.println("Param value exceeds max!");
 //			Serial.print("Param should now be: ");
 //			Serial.println(max);
 		}
@@ -176,10 +190,14 @@ void Parameters::constrain_param(uint8_t index)	{
 //		Serial.println(*(_params[index].value));
 		if(*(_params[index].value) < _params[index].min) {
 			*(_params[index].value) = _params[index].min;
+			return false;
 		} else if(*(_params[index].value) > _params[index].max) {
 			*(_params[index].value) = _params[index].max;
+			return false;
 		}
 	}
+
+	return true; // The parameter value was already in the correct range
 
 }
 

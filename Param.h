@@ -36,14 +36,15 @@ typedef struct {
 	float*              value;
 	float				min; // minimum valid value
 	float				max; // maximum valid value
+	float				def;
 } param_t;
 
 class Parameters {
 public:
 	Parameters();
 
-	param_t* add(char* id, float* var, float min, float max);
-	param_t* add(char* id, uint32_t* var, uint32_t min, uint32_t max);
+	param_t* add(char* id, float* var, float min, float max, float def);
+	param_t* add(char* id, uint32_t* var, uint32_t min, uint32_t max, uint32_t def);
 
 	void load_all(void);
 
@@ -53,7 +54,7 @@ public:
 	param_t* find(char *id);
 	param_t* get(uint8_t index);
 	param_t* set(char* id, float value);
-	void constrain_param(uint8_t index);
+	bool constrain_param(uint8_t index);
 
 	uint8_t num_params(void) const { return _n; };
 

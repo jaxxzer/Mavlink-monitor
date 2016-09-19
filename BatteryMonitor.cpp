@@ -15,12 +15,12 @@ cells(0)
 void BatteryMonitor::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
-		params->add("V_SCALE", &V_SCALE, 0, 100);
-		params->add("C_SCALE", &C_SCALE, 0, 100);
-		params->add("V_OFFSET", &V_OFFSET, 0, 100);
-		params->add("C_OFFSET", &C_OFFSET, 0, 100);
-		params->add("V_LPFCUT", &V_LPFCUT, 0.001, 100);
-		params->add("C_LPFCUT", &C_LPFCUT, 0.001, 100);
+		params->add("V_SCALE", &V_SCALE, 0, 100, 8.7);
+		params->add("C_SCALE", &C_SCALE, 0, 100, 10);
+		params->add("V_OFFSET", &V_OFFSET, 0, 100, 0);
+		params->add("C_OFFSET", &C_OFFSET, 0, 100, 0);
+		params->add("V_LPFCUT", &V_LPFCUT, 0.001, 100, 0.2);
+		params->add("C_LPFCUT", &C_LPFCUT, 0.001, 100, 0.2);
 	}
 }
 
