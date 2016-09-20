@@ -1,5 +1,7 @@
 #include "TempSensor.h"
 #include "MapleMini.h"
+#define TEMPSENSOR_DEBUG 0
+
 TempSensor::TempSensor() :
 temperature(0),
 _last_update_ms(0),
@@ -12,13 +14,13 @@ void TempSensor::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
 		params->add("T_SCALE", &T_SCALE, 0, 100, 10);
-		params->add("T_OFFSET", &T_OFFSET, 0, 100, 0);
+		params->add("T_OFFSET", &T_OFFSET, -10000, 10000, -5000); // Temperature offset in centidegrees C
 	}
 }
 
 // Called once on program startup, after parameters have been loaded
 void TempSensor::init() {
-	//constrain_params();
+
 }
 
 void TempSensor::update() {
@@ -30,20 +32,16 @@ void TempSensor::update() {
 
 	_last_update_ms = tnow;
 
-	// temperature reading in degrees C
-	float voltage = (analogRead(PIN_ADC_0) * ADC_VOLTAGE_SCALAR) + T_OFFSET;
+	float voltage = (analogRead(PIN_TEMPSENSOR) * ADC_VOLTAGE_SCALAR);
 
-	// 10mV per degree C
-	temperature = (voltage * 1000) / T_SCALE;
+	// 10mV/degree C
+	//	The TMP36 is specified from
+	//	−40°C to +125°C, provides a 750 mV output at 25°C, and
+	//	operates to 125°C from a single 2.7 V supply.
+	// temperature reading in centidegrees C
+	temperature = (voltage * 1000) * T_SCALE + T_OFFSET;
 
-#if DEBUG_OUTPUT
+#if TEMPSENSOR_DEBUG
 	Serial.println(temperature);
 #endif
-}
-
-// Sanity check on parameter values, initialize params to sensible values for
-// those that have never been set, or have been lost due to firmware flash
-void TempSensor::constrain_params() {
-	T_SCALE = constrain(T_SCALE, 1, 10000);
-	T_OFFSET = constrain(T_OFFSET, 0, 10000.0f);
 }

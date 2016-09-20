@@ -14,11 +14,8 @@ public:
 	void init(void);
 	void update(void);
 
-	// Sanity check parameter values
-	void constrain_params(void);
-
 	Parameters *params;
-	uint32_t T_SCALE; // Scalar, mV per degrees C
+	float T_SCALE; // Scalar, mV per degrees C
 	float T_OFFSET; // Voltage offset to be applied to temperature readings
 
 	// Temperature in degrees C
