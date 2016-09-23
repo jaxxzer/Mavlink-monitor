@@ -37,6 +37,8 @@ private:
 	uint32_t last_request_ms;
 	bool response_received;
 	uint32_t last_response_ms;
+	float last_valid_range; // to intelligently detect out of range high/low
+	bool out_of_range_flag; // to reset range_filt when valid range is recovered
 };
 
 #endif
