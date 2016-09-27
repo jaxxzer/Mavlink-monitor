@@ -15,6 +15,7 @@ public:
 	void update(void);
 
 	Parameters *params;
+	uint32_t W_ENABLE;
 
 	typedef struct {
 		uint8_t id;

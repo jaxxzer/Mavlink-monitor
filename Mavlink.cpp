@@ -90,12 +90,20 @@ void Mavlink::send_system_status(uint16_t looptime) {
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 
-	uint32_t sensor_health = 0;
-	sensor_health |= !monitor.waterdetector.detected * 0x20000000;
+	uint32_t sensors_enabled = 0;
+	sensors_enabled |= monitor.waterdetector.W_ENABLE * 0x20000000;
+	sensors_enabled |= monitor.tempsensor.T_ENABLE * 0x40000000;
+
+	uint32_t sensors_present = sensors_enabled;
+
+	uint32_t sensors_health = 0;
+	sensors_health |= !monitor.waterdetector.detected * 0x20000000;
+	sensors_health |= (monitor.tempsensor.temperature < monitor.tempsensor.T_LIMIT) * 0x40000000;
 
 	mavlink_msg_sys_status_pack(_sysid, _compid, &msg,
-			0, 0x20000000,
-			sensor_health,
+			sensors_present,
+			sensors_enabled,
+			sensors_health,
 			looptime,
 			monitor.battery.voltage_filt.get(),
 			monitor.battery.current_filt.get(),

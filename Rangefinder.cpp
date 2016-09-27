@@ -55,7 +55,7 @@ void Rangefinder::update() {
 			last_valid_range = range;
 			status = STATUS_CONNECTED;
 		} else {
-			if(last__valid_range < 40) {
+			if(last_valid_range < 40) {
 				range = 1; // out of range low
 			} else {
 				range = 9999; // out of range high
