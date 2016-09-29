@@ -5,7 +5,7 @@
 TempSensor::TempSensor() :
 temperature(0),
 _last_update_ms(0),
-_update_interval_ms(1000)
+_update_interval_ms(100)
 {
 	pinMode(PIN_TEMPSENSOR, INPUT);
 }

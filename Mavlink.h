@@ -23,7 +23,7 @@ class Mavlink {
     void send_battery_status(void);
     void send_power_status(void);
     void send_distance_sensor(uint16_t distance_cm, uint16_t distance_cm_filt);
-    void send_request_data_stream(void);
+    void send_request_data_stream(MAV_DATA_STREAM stream_id, uint16_t rate, uint8_t start_stop);
     void send_mission_count(uint8_t target_system, uint8_t target_component);
     void comm_receive(void);
     void send_nav_cmd_do_trigger_control(uint32_t pic_interval_ms);
@@ -44,6 +44,7 @@ class Mavlink {
     uint8_t _compid;
     Stream *_port;
     uint8_t _channel;
+    uint32_t last_master_time_request_ms;
 
 };
 

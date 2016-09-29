@@ -14,7 +14,8 @@ Mavlink::Mavlink(uint8_t sysid, uint8_t compid, Stream *port, uint8_t channel) :
 		_channel(channel),
 		master_time(0),
 		system_type(MAV_TYPE_MONITOR),
-		autopilot_type(MAV_AUTOPILOT_INVALID)
+		autopilot_type(MAV_AUTOPILOT_INVALID),
+		last_master_time_request_ms(0)
 {}
 
 void Mavlink::init_params(Parameters *_params) {
@@ -35,6 +36,11 @@ void Mavlink::update(void) {
 
 	if(last_master_recv_ms == 0)
 		return;
+
+	if(master_time == 0 && tnow > last_master_time_request_ms + 1000) {
+		last_master_time_request_ms = tnow;
+		send_request_data_stream(MAV_DATA_STREAM_EXTRA3, 1, 1);
+	}
 
 	if(tnow > last_master_recv_ms + LINK_TIMEOUT_MS) {
 		if(status == STATUS_CONNECTED)
@@ -211,7 +217,7 @@ void Mavlink::send_distance_sensor(uint16_t distance_cm, uint16_t distance_cm_fi
 }
 
 // Send pixhawk request to stop sending extraneous messages intended for a GCS
-void Mavlink::send_request_data_stream() {
+void Mavlink::send_request_data_stream(MAV_DATA_STREAM stream_id, uint16_t rate, uint8_t start_stop) {
 
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
@@ -221,7 +227,7 @@ void Mavlink::send_request_data_stream() {
 
 
 	mavlink_msg_request_data_stream_pack(_sysid, _compid, &msg,
-			1, 1, MAV_DATA_STREAM_ALL, 0, 0);
+			1, 1, stream_id, rate, start_stop);
 
 	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 	_port->write(buf, len);
@@ -320,7 +326,9 @@ void Mavlink::comm_receive() {
 				mavlink_msg_system_time_decode(&msg, &in);
 
 				master_time = in.time_boot_ms;
-				send_request_data_stream();
+
+				// Send request to stop all streams from pixhawk
+				send_request_data_stream(MAV_DATA_STREAM_ALL, 0, 0);
 			} break;
 
 			case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
@@ -329,8 +337,6 @@ void Mavlink::comm_receive() {
 
 			//https://pixhawk.ethz.ch/mavlink/#PARAM_SET
 			case MAVLINK_MSG_ID_PARAM_SET: {
-
-
 				mavlink_param_set_t in;
 				mavlink_msg_param_set_decode(&msg, &in);
 #if MAVLINK_DEBUG
