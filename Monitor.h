@@ -18,6 +18,7 @@
 #include "Dipswitch.h"
 #include "TempSensor.h"
 #include "Button.h"
+#include "BME280.h"
 
 
 class Monitor {
@@ -38,6 +39,7 @@ public:
 	Dipswitch dipswitch;
 	TempSensor tempsensor;
 	Button button;
+	BME280 bme;
 
 	void run(void);
 	void init(void);

@@ -29,7 +29,8 @@ notify(),
 waterdetector(),
 dipswitch(),
 tempsensor(),
-button()
+button(),
+bme()
 
 {}
 
@@ -65,6 +66,7 @@ void Monitor::init() {
 	battery.init();
 	rangefinder.init();
 	waterdetector.init();
+	bme.init();
 
 	// Set mavlink sysid according to dipswitch state
 	// id 0 is broadcast, id 1 is pixhawk itself, we can be (0~7) + 2 = 2~9
@@ -115,6 +117,7 @@ void Monitor::run() {
 	dipswitch.update();
 	tempsensor.update();
 	button.update();
+	bme.update();
 
 	notify.set_status(LED_MAPLE, pixhawk.status);
 	notify.set_status(LED_1, esp.status);
