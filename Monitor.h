@@ -53,7 +53,7 @@ public:
 	uint32_t BAUD_PIX;
 	uint32_t BAUD_ESP;
 	uint32_t BAUD_232;
-  uint32_t PIC_INTERVAL;
+	uint32_t PIC_INTERVAL;
 
 private:
 	///////////////////////////

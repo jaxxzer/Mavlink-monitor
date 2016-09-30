@@ -96,15 +96,33 @@ void Mavlink::send_system_status(uint16_t looptime) {
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 
+	uint32_t MAV_SENSOR_WATER = 0x20000000;
+	uint32_t MAV_SENSOR_TEMP = 0x40000000;
+	uint32_t MAV_SENSOR_HUMIDITY = 0x60000000;
+	uint32_t MAV_SENSOR_PRESSURE = 0x80000000;
+
 	uint32_t sensors_enabled = 0;
-	sensors_enabled |= monitor.waterdetector.W_ENABLE * 0x20000000;
-	sensors_enabled |= monitor.tempsensor.T_ENABLE * 0x40000000;
+
+	if(monitor.waterdetector.W_ENABLE) {
+		sensors_enabled |= MAV_SENSOR_WATER;
+	}
+
+	if(monitor.tempsensor.T_ENABLE) {
+		sensors_enabled |= MAV_SENSOR_TEMP;
+	}
+
+	if(monitor.bme.BME_ENABLE) {
+		sensors_enabled |= MAV_SENSOR_TEMP;
+		sensors_enabled |= MAV_SENSOR_HUMIDITY;
+		sensors_enabled |= MAV_SENSOR_PRESSURE;
+	}
 
 	uint32_t sensors_present = sensors_enabled;
 
 	uint32_t sensors_health = 0;
-	sensors_health |= !monitor.waterdetector.detected * 0x20000000;
-	sensors_health |= (monitor.tempsensor.temperature < monitor.tempsensor.T_LIMIT) * 0x40000000;
+	sensors_health |= !monitor.waterdetector.detected * MAV_SENSOR_WATER;
+	sensors_health |= (monitor.tempsensor.temperature < monitor.tempsensor.T_LIMIT) &&
+			(monitor.bme.temperature < monitor.tempsensor.T_LIMIT) * 0x40000000;
 
 	mavlink_msg_sys_status_pack(_sysid, _compid, &msg,
 			sensors_present,
@@ -114,8 +132,10 @@ void Mavlink::send_system_status(uint16_t looptime) {
 			monitor.battery.voltage_filt.get(),
 			monitor.battery.current_filt.get(),
 			monitor.battery.remaining(),
-			0, 0, 0,
 			0, 0,
+			monitor.bme.humidity * 100.0f,
+			monitor.bme.pressure / 100.0f,
+			monitor.bme.temperature * 100.0f,
 			monitor.tempsensor.temperature);
 	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 	_port->write(buf, len);

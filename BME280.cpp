@@ -1,10 +1,10 @@
 #include <Wire.h>
 #include "BME280.h"
 
-#define DEBUG_BME280 1
+#define DEBUG_BME280 0
 
 // Datasheet p31
-// i2c slave address tie SDO to GND for 0x76, to VDDIO for 0x77
+// i2c device address tie SDO to GND for 0x76, to VDDIO for 0x77
 #define BME280_ADDRESS 0x76
 
 // Datasheet p22
@@ -15,56 +15,64 @@
 
 
 // Datasheet p28,29
-#define BME280_ADD_ADC_PRESS 0xF7
-#define BME280_ADD_ADC_TEMP 0xFA
-#define BME280_ADD_ADC_HUM 0xFD
-
-
-#define BME280_ADD_CTRL_MEAS 0xF4
+#define BME280_ADD_ADC_PRESS	0xF7
+#define BME280_ADD_ADC_TEMP		0xFA
+#define BME280_ADD_ADC_HUM		0xFD
 
 
 // Datasheet p26
-#define BME280_ADD_CTRL_HUM 0xF2
+#define BME280_ADD_CTRL_HUM		0xF2
+#define BME280_ADD_CTRL_MEAS	0xF4
 
 
 // Datasheet p27
-#define BME280_OVERSAMPLE_SKIP 0
-#define BME280_OVERSAMPLE_1	1
-#define BME280_OVERSAMPLE_2 2
-#define BME280_OVERSAMPLE_4 3
-#define BME280_OVERSAMPLE_8 4
-#define BME280_OVERSAMPLE_16 5
+#define BME280_OVERSAMPLE_SKIP	0
+#define BME280_OVERSAMPLE_1		1
+#define BME280_OVERSAMPLE_2		2
+#define BME280_OVERSAMPLE_4		3
+#define BME280_OVERSAMPLE_8		4
+#define BME280_OVERSAMPLE_16	5
 
-#define BME280_MODE_SLEEP 0
-#define BME280_MODE_FORCE 1
-#define BME280_MODE_NORMAL 3
+#define BME280_MODE_SLEEP		0
+#define BME280_MODE_FORCE		1
+#define BME280_MODE_NORMAL		3
 
 // Datasheet p28
 // Standby time in ms
 // Writes to the config register in normal mode may be ignored
-#define BME280_T_STANDBY_0_5 0
-#define BME280_T_STANDBY_62_5 1
-#define BME280_T_STANDBY_125 2
-#define BME280_T_STANDBY_250 3
-#define BME280_T_STANDBY_500 4
-#define BME280_T_STANDBY_1000 5
-#define BME280_T_STANDBY_10 6
-#define BME280_T_STANDBY_20 7
+#define BME280_T_STANDBY_0_5	0
+#define BME280_T_STANDBY_62_5	1
+#define BME280_T_STANDBY_125	2
+#define BME280_T_STANDBY_250	3
+#define BME280_T_STANDBY_500	4
+#define BME280_T_STANDBY_1000	5
+#define BME280_T_STANDBY_10		6
+#define BME280_T_STANDBY_20		7
 
-#define BME280_FILTER_COEFF_OFF 0
-#define BME280_FILTER_COEFF_2 1
-#define BME280_FILTER_COEFF_4 2
-#define BME280_FILTER_COEFF_8 3
-#define BME280_FILTER_COEFF_16 4
+#define BME280_FILTER_COEFF_OFF	0
+#define BME280_FILTER_COEFF_2	1
+#define BME280_FILTER_COEFF_4	2
+#define BME280_FILTER_COEFF_8	3
+#define BME280_FILTER_COEFF_16	4
 
 BME280::BME280() :
 last_update_ms(0),
-update_interval_ms(100)
+update_interval_ms(50)
 {
 
 }
 
+void BME280::init_params(Parameters *_params) {
+	params = _params;
+	if(params != NULL) {
+		params->add("BME_ENABLE", &BME_ENABLE, 0, 1, 0);
+	}
+}
+
 void BME280::init() {
+	if(!BME_ENABLE) {
+		return;
+	}
 	Wire.scl_pin = 14;
 	Wire.sda_pin = 13;
 	Wire.begin(BME280_ADDRESS);
@@ -76,6 +84,13 @@ void BME280::init() {
 }
 
 void BME280::update() {
+	if(!BME_ENABLE) {
+		pressure = 0;
+		temperature = 0;
+		humidity = 0;
+		return;
+	}
+
 	uint32_t tnow = millis();
 	if(tnow < last_update_ms + update_interval_ms) {
 		return;
@@ -208,7 +223,6 @@ void BME280::read_adcs() {
 	// 0xF7...0xFE
 	// [0:2] temp, [3:5] press, [6:7] hum
 	uint8_t buf[num_bytes];
-	int i = 0;
 	for(int i = 0; i < num_bytes; i++) {
 		buf[i] = Wire.read();
 	}

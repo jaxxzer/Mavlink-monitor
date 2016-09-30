@@ -1,11 +1,17 @@
 #ifndef BME280_H
 #define BME280_H
+#include "Param.h"
 
 class BME280 {
 public:
 	BME280();
+	void init_params(Parameters *_params);
 	void init();
 	void update();
+
+	// Parameters
+	Parameters *params;
+	uint32_t BME_ENABLE;
 
 	void print_calibration();
 	void print_state();
@@ -19,7 +25,6 @@ private:
 	uint32_t calculate_pressure(int32_t adc_P);
 	uint32_t calculate_humidity(int32_t adc_H);
 	void read_calibration();
-
 	void read_adcs();
 
 	int32_t adc_T, adc_P, adc_H;

@@ -27,6 +27,7 @@ void TempSensor::init() {
 
 void TempSensor::update() {
 	if(!T_ENABLE) {
+		temperature = 0;
 		return;
 	}
 
