@@ -1,6 +1,8 @@
 #include <Wire.h>
 #include "BME280.h"
 
+#define DEBUG_BME280 1
+
 // Datasheet p31
 // i2c slave address tie SDO to GND for 0x76, to VDDIO for 0x77
 #define BME280_ADDRESS 0x76
@@ -13,9 +15,9 @@
 
 
 // Datasheet p28,29
-#define BME280_ADD_PRESS 0xF7
-#define BME280_ADD_TEMP 0xFA
-#define BME280_ADD_HUM 0xFD
+#define BME280_ADD_ADC_PRESS 0xF7
+#define BME280_ADD_ADC_TEMP 0xFA
+#define BME280_ADD_ADC_HUM 0xFD
 
 
 #define BME280_ADD_CTRL_MEAS 0xF4
@@ -68,7 +70,9 @@ void BME280::init() {
 	Wire.begin(BME280_ADDRESS);
 	set_mode(BME280_OVERSAMPLE_16, BME280_OVERSAMPLE_16, BME280_OVERSAMPLE_16, BME280_MODE_NORMAL);
 	read_calibration();
+#if DEBUG_BME280
 	print_calibration();
+#endif
 }
 
 void BME280::update() {
@@ -78,24 +82,21 @@ void BME280::update() {
 	}
 	last_update_ms = tnow;
 
+	read_adcs();
 
-	int32_t adc_temperature = read_temp_adc();
-	temperature = (float)calculate_temp(adc_temperature)/100.0f;
-
-	int32_t adc_humidity = read_hum_adc();
-	humidity = (float)calculate_humidity(adc_humidity) / 1024.0f;
-
-	int32_t adc_pressure = read_press_adc();
-	pressure = (float)calculate_pressure(adc_pressure)/256.0f;
+	temperature = calculate_temp(adc_T)/100.0f;
+	pressure = calculate_pressure(adc_P)/256.0f;
+	humidity = calculate_humidity(adc_H) / 1024.0f;
+#if DEBUG_BME280
 	print_state();
-
+#endif
 }
 
 void BME280::print_state() {
 	String s = "";
-	s += "\nH: "; s += humidity;
-	s += "\nT: "; s += temperature;
 	s += "\nP: "; s += pressure;
+	s += "\nT: "; s += temperature;
+	s += "\nH: "; s += humidity;
 	Serial.print(s);
 }
 
@@ -214,56 +215,25 @@ void BME280::read_calibration() {
 	dig_H6 = buf[i++]; // signed char
 }
 
-int32_t BME280::read_temp_adc() {
-	Wire.beginTransmission(BME280_ADDRESS);
-	Wire.write(BME280_ADD_TEMP);
-	Wire.endTransmission();
-	Wire.requestFrom(BME280_ADDRESS, 3);
-	uint8_t buf[3];
-	delay(10);
-	int i = 0;
-	while(Wire.available()) {
-		buf[i++] = Wire.read();
-	}
-	uint32_t adc_t = 0;
-	// msb, lsb, xlsb
-	adc_t = (buf[0] << 16) + (buf[1] << 8) + buf[2];
-	adc_t = adc_t >> 4;
-	return adc_t;
-}
+void BME280::read_adcs() {
+	uint8_t num_bytes = 8;
 
-int32_t BME280::read_hum_adc() {
 	Wire.beginTransmission(BME280_ADDRESS);
-	Wire.write(BME280_ADD_HUM);
+	Wire.write(BME280_ADD_ADC_PRESS);
 	Wire.endTransmission();
-	Wire.requestFrom(BME280_ADDRESS, 2);
-	uint8_t buf[2];
-	delay(10);
-	int i = 0;
-	while(Wire.available()) {
-		buf[i++] = Wire.read();
-	}
-	uint32_t adc_h = 0;
-	adc_h = (buf[0] << 8) + buf[1];
-	return adc_h;
-}
+	Wire.requestFrom(BME280_ADDRESS, num_bytes);
 
-int32_t BME280::read_press_adc() {
-	Wire.beginTransmission(BME280_ADDRESS);
-	Wire.write(BME280_ADD_PRESS);
-	Wire.endTransmission();
-	Wire.requestFrom(BME280_ADDRESS, 3);
-	uint8_t buf[3];
-	delay(10);
+	// 0xF7...0xFE
+	// [0:2] temp, [3:5] press, [6:7] hum
+	uint8_t buf[num_bytes];
 	int i = 0;
-	while(Wire.available()) {
-		buf[i++] = Wire.read();
+	for(int i = 0; i < num_bytes; i++) {
+		buf[i] = Wire.read();
 	}
-	uint32_t adc_p = 0;
-	// msb, lsb, xlsb
-	adc_p = (buf[0] << 16) + (buf[1] << 8) + buf[2];
-	adc_p = adc_p >> 4;
-	return adc_p;
+
+	adc_P = ((buf[0] << 16) + (buf[1] << 8) + buf[2]) >> 4;
+	adc_T = ((buf[3] << 16) + (buf[4] << 8) + buf[5]) >> 4;
+	adc_H = (buf[6] << 8) + buf[7];
 }
 
 // Datasheet p27

@@ -7,6 +7,8 @@ public:
 	void init();
 	void update();
 
+	void print_calibration();
+	void print_state();
 	float pressure; // Pascal
 	float humidity; // Relative %
 	float temperature; // Degrees C
@@ -17,12 +19,10 @@ private:
 	uint32_t calculate_pressure(int32_t adc_P);
 	uint32_t calculate_humidity(int32_t adc_H);
 	void read_calibration();
-	void print_calibration();
-	void print_state();
-	int32_t read_temp_adc();
-	int32_t read_press_adc();
-	int32_t read_hum_adc();
 
+	void read_adcs();
+
+	int32_t adc_T, adc_P, adc_H;
 	uint32_t last_update_ms;
 	uint32_t update_interval_ms;
 
