@@ -15,7 +15,7 @@ public:
 
 private:
 	void set_mode(uint8_t osrs_h, uint8_t osrs_t, uint8_t osrs_p, uint8_t mode);
-	int32_t calculate_temp(int32_t adc_T);
+	int32_t calculate_temperature(int32_t adc_T);
 	uint32_t calculate_pressure(int32_t adc_P);
 	uint32_t calculate_humidity(int32_t adc_H);
 	void read_calibration();
