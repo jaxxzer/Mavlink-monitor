@@ -151,40 +151,21 @@ void BME280::read_calibration() {
 	Wire.requestFrom(BME280_ADDRESS, BME280_COMP1_LENGTH);
 
 	uint8_t buf[BME280_COMP1_LENGTH + BME280_COMP2_LENGTH];
-	delay(10);
-	int i = 0;
-	uint8_t current_add = BME280_ADD_COMPENSATION1;
-	while(Wire.available()) {
-		//		Serial.print("Register at 0x");
-		//		Serial.print(current_add++, HEX);
-		//		Serial.print(" into buf[");
-		//		Serial.print(i);
-		//		Serial.print("]: ");
-		uint8_t value = Wire.read();
-		buf[i++] = value;
-		//		Serial.println(value, BIN);
 
+	for(int i = 0; i < BME280_COMP1_LENGTH; i++) {
+		buf[i] = Wire.read();
 	}
 
 	Wire.beginTransmission(BME280_ADDRESS);
 	Wire.write(BME280_ADD_COMPENSATION2);
-	delay(10);
 	Wire.endTransmission();
 	Wire.requestFrom(BME280_ADDRESS, BME280_COMP2_LENGTH);
 
-	current_add = BME280_ADD_COMPENSATION2;
-	while(Wire.available()) {
-		//		Serial.print("Register at 0x");
-		//		Serial.print(current_add++, HEX);
-		//		Serial.print(" into buf[");
-		//		Serial.print(i);
-		//		Serial.print("]: ");
-		uint8_t value = Wire.read();
-		buf[i++] = value;
-		//		Serial.println(value, BIN);
+	for(int i = BME280_COMP1_LENGTH; i < BME280_COMP1_LENGTH + BME280_COMP2_LENGTH; i++) {
+		buf[i] = Wire.read();
 	}
 
-	i = 0;
+	int i = 0;
 
 	// 0x88
 	dig_T1 = buf[i++] | (buf[i++]<<8); // unsigned short
@@ -204,6 +185,7 @@ void BME280::read_calibration() {
 
 	// 0xA0, undefined, unused, skip this byte
 	i++;
+
 	// 0xA1
 	dig_H1 = buf[i++]; 									// unsigned char
 	dig_H2 = buf[i++] | (buf[i++]<<8); // signed short
