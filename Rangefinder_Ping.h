@@ -3,6 +3,7 @@
 
 #include "Param.h"
 #include <Arduino.h>
+#include "Notify.h"
 #include "MapleMini.h"
 #include "LowPassFilter.h"
 
@@ -17,17 +18,19 @@ public:
 	void init_params(Parameters *_params);
 	void init(void);
 	void update(void);
-	LowPassFilterFloat range_filt;
+
+	Parameters *params;
 	uint32_t PINGRATE;
 	uint32_t RANGE_ENABLE;
 	uint32_t LPF_ENABLE;
 	float LPF_CUTOFF;
+
 	uint16_t range;
-	Parameters *params;
+	LowPassFilterFloat range_filt;
+
+	conn_status_t status;
 
 private:
-	//int8_t _pin;
-
 	uint16_t micros_to_cm(uint32_t microseconds);
 	uint16_t last_valid_range;
 	bool out_of_range_flag;

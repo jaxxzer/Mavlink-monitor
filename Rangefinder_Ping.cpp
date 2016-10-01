@@ -1,7 +1,7 @@
 #include "Rangefinder_Ping.h"
 #define RANGE_MAX 60
 #define RANGE_MIN 15
-
+#define RANGEFINDER_TIMEOUT_MS 500
 
 volatile bool echo_received = false;
 volatile bool echo_receiving = false;
@@ -21,6 +21,7 @@ Rangefinder_Ping::Rangefinder_Ping() :
 		last_ping_ms(0),
 		last_response_ms(0),
 		range_filt(0.25),
+		status(STATUS_NOT_CONNECTED),
 		last_valid_range(0),
 		out_of_range_flag(true)
 {
@@ -47,7 +48,9 @@ void Rangefinder_Ping::init() {
 
 void Rangefinder_Ping::update() {
 
-	if(!RANGE_ENABLE) {
+	// exit if rangefinder is not enabled
+	if(PINGRATE == 0 || !RANGE_ENABLE) {
+		status = STATUS_NOT_CONNECTED;
 		range = 0;
 		range_filt.reset(0);
 		return;
@@ -59,6 +62,7 @@ void Rangefinder_Ping::update() {
 
 	uint32_t tnow = millis();
 	if(echo_received) {
+		status = STATUS_CONNECTED;
 		echo_received = false;
 		range = micros_to_cm(echo_end - echo_start);
 
@@ -76,7 +80,7 @@ void Rangefinder_Ping::update() {
 		// Micron reads 0 when out of range
 		if(range > 0) {
 			last_valid_range = range;
-//			status = STATUS_CONNECTED;
+
 		} else {
 			if(last_valid_range < RANGE_MIN + 5) {
 				range = 1; // out of range low
@@ -87,21 +91,19 @@ void Rangefinder_Ping::update() {
 			range_filt.reset(range); // reset filter in case it's enabled
 			out_of_range_flag = true;
 		}
-
-
-
-
-
 #if DEBUG_OUTPUT
 		Serial.print("R: ");
 		Serial.println(range);
 #endif
+	} else if(status == STATUS_CONNECTED && tnow > last_response_ms + RANGEFINDER_TIMEOUT_MS) {
+		status = STATUS_CONNECTION_LOST;
 	}
 
 	if(tnow > last_ping_ms + 1000/PINGRATE && (last_response_ms >= last_ping_ms || tnow > last_ping_ms + PING_TIMEOUT_MS)) { // Time to ping again
 		trigger(PIN_TRIGGER);
 		last_ping_ms = tnow;
 	}
+
 }
 
 void Rangefinder_Ping::trigger(int16_t pin) {

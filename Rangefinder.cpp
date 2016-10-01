@@ -34,6 +34,8 @@ void Rangefinder::update() {
 	// exit if rangefinder is not enabled
 	if(PINGRATE == 0 || !RANGE_ENABLE) {
 		status = STATUS_NOT_CONNECTED;
+		range = 0;
+		range_filt.reset(0);
 		return;
 	}
 
@@ -49,11 +51,10 @@ void Rangefinder::update() {
 
 	// rangefinder is communicating
 	if(tnow < last_response_ms + RANGEFINDER_TIMEOUT_MS) {
-
+		status = STATUS_CONNECTED;
 		// Micron reads 0 when out of range
 		if(range > 0) {
 			last_valid_range = range;
-			status = STATUS_CONNECTED;
 		} else {
 			if(last_valid_range < 40) {
 				range = 1; // out of range low

@@ -5,7 +5,7 @@
 #include "Param.h"
 #include "LowPassFilter.h"
 
-#define RANGEFINDER_TIMEOUT_MS 10000
+#define RANGEFINDER_TIMEOUT_MS 2000
 
 
 class Rangefinder {
