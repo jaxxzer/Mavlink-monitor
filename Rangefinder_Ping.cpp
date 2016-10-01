@@ -26,7 +26,7 @@ Rangefinder_Ping::Rangefinder_Ping() :
 		out_of_range_flag(true)
 {
 	pinMode(PIN_TRIGGER, OUTPUT);
-	pinMode(PIN_ECHO, INPUT);
+	pinMode(PIN_ECHO, INPUT_PULLDOWN);
 	digitalWrite(PIN_TRIGGER, LOW);
 	attachInterrupt(PIN_ECHO, echo_receive, CHANGE);
 }
