@@ -1,4 +1,7 @@
 #include "Rangefinder_Ping.h"
+#define RANGE_MAX 60
+#define RANGE_MIN 15
+
 
 volatile bool echo_received = false;
 volatile bool echo_receiving = false;
@@ -17,7 +20,9 @@ void echo_receive() {
 Rangefinder_Ping::Rangefinder_Ping() :
 		last_ping_ms(0),
 		last_response_ms(0),
-		range_filt(0.25)
+		range_filt(0.25),
+		last_valid_range(0),
+		out_of_range_flag(true)
 {
 	pinMode(PIN_TRIGGER, OUTPUT);
 	pinMode(PIN_ECHO, INPUT);
@@ -42,17 +47,50 @@ void Rangefinder_Ping::init() {
 
 void Rangefinder_Ping::update() {
 
+	if(!RANGE_ENABLE) {
+		range = 0;
+		range_filt.reset(0);
+		return;
+	}
+
 	if(LPF_ENABLE && LPF_CUTOFF != range_filt.get_cutoff_freq()) {
 		range_filt.set_cutoff_frequency(LPF_CUTOFF);
 	}
+
 	uint32_t tnow = millis();
 	if(echo_received) {
 		echo_received = false;
 		range = micros_to_cm(echo_end - echo_start);
-		if(LPF_ENABLE) {
-			range_filt.apply(range, (tnow-last_response_ms) / 1000.0f);
+
+		if(LPF_ENABLE && range != 0) {
+			if(out_of_range_flag) {
+				out_of_range_flag = false;
+				range_filt.reset(range); // this is the first valid range reading since we went out of range
+			} else {
+				range_filt.apply(range, (tnow-last_response_ms) / 1000.0f);
+			}
 		}
+
 		last_response_ms = tnow;
+
+		// Micron reads 0 when out of range
+		if(range > 0) {
+			last_valid_range = range;
+//			status = STATUS_CONNECTED;
+		} else {
+			if(last_valid_range < RANGE_MIN + 5) {
+				range = 1; // out of range low
+			} else {
+				range = 9999; // out of range high
+			}
+
+			range_filt.reset(range); // reset filter in case it's enabled
+			out_of_range_flag = true;
+		}
+
+
+
+
 
 #if DEBUG_OUTPUT
 		Serial.print("R: ");
@@ -75,5 +113,9 @@ void Rangefinder_Ping::trigger(int16_t pin) {
 }
 
 uint16_t Rangefinder_Ping::micros_to_cm(uint32_t microseconds) {
-	return microseconds/2/29; //round trip, 29us per cm in air
+	uint16_t cm = microseconds/2/29;
+	if(cm > RANGE_MAX || cm < RANGE_MIN) {
+		return 0;
+	} else return cm;
+//	return microseconds/2/29; //round trip, 29us per cm in air
 }

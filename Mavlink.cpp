@@ -54,15 +54,6 @@ void Mavlink::update(void) {
 }
 
 void Mavlink::send_heartbeat() {
-	////////////////////
-	//Heartbeat
-	//////////////////////
-	// Define the system type (see mavlink_types.h for list of possible types)
-
-#if MAVLINK_DEBUG
-	//Serial.println("Sending Heartbeat");
-#endif
-
 	// Initialize the required buffers
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
@@ -82,12 +73,6 @@ void Mavlink::send_heartbeat() {
 }
 
 void Mavlink::send_system_status(uint16_t looptime) {
-	////////////////////
-	//System Status
-	//////////////////////
-
-	//https://pixhawk.ethz.ch/mavlink/#SYS_STATUS
-
 	//  static inline uint16_t mavlink_msg_sys_status_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
 	//                   uint32_t onboard_control_sensors_present, uint32_t onboard_control_sensors_enabled,
 	//                   uint32_t onboard_control_sensors_health, uint16_t load, uint16_t voltage_battery, int16_t current_battery,
@@ -122,7 +107,9 @@ void Mavlink::send_system_status(uint16_t looptime) {
 	uint32_t sensors_health = 0;
 	sensors_health |= !monitor.waterdetector.detected * MAV_SENSOR_WATER;
 	sensors_health |= (monitor.tempsensor.temperature < monitor.tempsensor.T_LIMIT) &&
-			(monitor.bme.temperature < monitor.tempsensor.T_LIMIT) * 0x40000000;
+			(monitor.bme.temperature < monitor.tempsensor.T_LIMIT) * MAV_SENSOR_TEMP;
+	sensors_health |= (monitor.bme.humidity < 80) * MAV_SENSOR_HUMIDITY;
+	sensors_health |= (monitor.bme.pressure < 105000) * MAV_SENSOR_PRESSURE;
 
 	mavlink_msg_sys_status_pack(_sysid, _compid, &msg,
 			sensors_present,
@@ -179,10 +166,6 @@ void Mavlink::send_text(char* text) {
 }
 
 void Mavlink::send_battery_status() {
-	////////////////////
-	//Battery status
-	//////////////////////
-
 	//static inline uint16_t mavlink_msg_battery_status_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
 	//                 uint8_t id, uint8_t battery_function, uint8_t type, int16_t temperature, const uint16_t *voltages, int16_t current_battery, int32_t current_consumed, int32_t energy_consumed, int8_t battery_remaining)
 
@@ -196,12 +179,6 @@ void Mavlink::send_battery_status() {
 }
 
 void Mavlink::send_power_status() {
-	////////////////////
-	//Power Status
-	//////////////////////
-
-	//Arduino/ArduinoMAVLink/common/mavlink_msg_power_status.h
-
 	//static inline uint16_t mavlink_msg_power_status_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
 	//                 uint16_t Vcc, uint16_t Vservo, uint16_t flags)
 
@@ -215,13 +192,6 @@ void Mavlink::send_power_status() {
 }
 
 void Mavlink::send_distance_sensor(uint16_t distance_cm, uint16_t distance_cm_filt) {
-	////////////////////
-	//Power Status
-	//////////////////////
-#if MAVLINK_DEBUG
-	//Serial.println("Sending range");
-#endif
-	//Arduino/ArduinoMAVLink/common/mavlink_msg_distance_sensor.h
 
 	//static inline uint16_t mavlink_msg_distance_sensor_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
 	//                   uint32_t time_boot_ms, uint16_t min_distance, uint16_t max_distance, uint16_t current_distance, uint8_t type, uint8_t id, uint8_t orientation, uint8_t covariance)

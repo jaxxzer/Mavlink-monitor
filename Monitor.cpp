@@ -121,7 +121,7 @@ void Monitor::run() {
 
 	notify.set_status(LED_MAPLE, pixhawk.status);
 	notify.set_status(LED_1, esp.status);
-	notify.set_status(LED_2, rangefinder.status);
+	//notify.set_status(LED_2, rangefinder.status);
 
 	//30 second loop
 	if(tnow - last30s > 1000 * 30) {
@@ -143,7 +143,6 @@ void Monitor::run() {
 		last1Hz = tnow;
 		pixhawk.send_heartbeat();
 		esp.send_heartbeat();
-
 	}
 
 	// 5Hz loop
@@ -153,9 +152,7 @@ void Monitor::run() {
 
 	// 10Hz loop
 	if(tnow - last10Hz > 1000/10) {
-
 		last10Hz = tnow;
-
 	}
 
 	if(tnow - last50Hz > 1000/50) {

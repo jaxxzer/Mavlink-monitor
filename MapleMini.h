@@ -27,8 +27,8 @@
 #define PIN_ADC_2 5
 
 // Pins for Rangefinder_Ping
-#define PIN_ECHO 27
-#define PIN_TRIGGER 28
+#define PIN_ECHO 30
+#define PIN_TRIGGER 31
 
 #define PIN_BUTTON 32
 

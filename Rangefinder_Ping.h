@@ -29,7 +29,8 @@ private:
 	//int8_t _pin;
 
 	uint16_t micros_to_cm(uint32_t microseconds);
-
+	uint16_t last_valid_range;
+	bool out_of_range_flag;
 	void trigger(int16_t pin);
 	uint32_t last_ping_ms;
 	uint32_t last_response_ms;
