@@ -291,6 +291,7 @@ void Mavlink::comm_receive() {
 
 		//try to get a new message
 		if(mavlink_parse_char(_channel, c, &msg, &status)) {
+			monitor.notify.blink(LED_3);
 			// Accept messages from pixhawk {1,1} or from esp {_sysid,2} on same system
 			if(msg.sysid == 1 && msg.compid == 1 ||
 					msg.sysid == _sysid)

@@ -59,7 +59,11 @@ void Notify::update() {
 	_last_tick_ms = tnow;
 
 	for(int i = 0; i < NOTIFY_NUM_LEDS; i++) {
-		if(leds[i].pin != -1 && leds[i].playing) {
+		if(leds[i].pin == -1) {
+			continue;
+		}
+
+		if(leds[i].playing) {
 
 			if(leds[i].delay > 0) {
 				leds[i].delay--;
@@ -84,8 +88,17 @@ void Notify::update() {
 					leds[i].c++;
 				}
 			}
+		} else if(leds[i].blink) { // turn led on for a single tick
+			digitalWrite(leds[i].pin, leds[i].default_on); // turn led on
+			leds[i].state = true;
+			leds[i].blink = false;
+		} else {
+			digitalWrite(leds[i].pin, !leds[i].default_on); // turn led off
+			leds[i].state = false;
 		}
 	}
+
+
 }
 
 void Notify::set(uint8_t id, bool state) {
@@ -132,5 +145,10 @@ void Notify::stop(uint8_t id) {
 
 void Notify::set_delay(uint8_t id, uint8_t delay) {
 	leds[id].delay = delay;
+}
+
+void Notify::blink(uint8_t id) {
+	leds[id].playing = false; // stop pattern
+	leds[id].blink = true;
 }
 
