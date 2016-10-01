@@ -188,6 +188,9 @@ bool Parameters::constrain_param(uint8_t index)	{
 		}
 	}else {
 //		Serial.println(*(_params[index].value));
+		if(isnan(*(_params[index].value)) || isinf(*(_params[index].value))) {
+			return false;
+		}
 		if(*(_params[index].value) < _params[index].min) {
 			*(_params[index].value) = _params[index].min;
 			return false;
