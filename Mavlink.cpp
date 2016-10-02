@@ -12,7 +12,7 @@ Mavlink::Mavlink(uint8_t sysid, uint8_t compid, Stream *port, uint8_t channel) :
 		_compid(compid),
 		_port(port),
 		_channel(channel),
-		master_time(0),
+		master_time_offset(0),
 		system_type(MAV_TYPE_MONITOR),
 		autopilot_type(MAV_AUTOPILOT_INVALID),
 		last_master_time_request_ms(0)
@@ -37,7 +37,9 @@ void Mavlink::update(void) {
 	if(last_master_recv_ms == 0)
 		return;
 
-	if(master_time == 0 && tnow > last_master_time_request_ms + 1000) {
+	// request time at 1hz until we have synchronized with master
+	// only use with pixhawk at {sysid,compid} = {1,1}
+	if(master_time_offset == 0 && tnow > last_master_time_request_ms + 1000) {
 		last_master_time_request_ms = tnow;
 		send_request_data_stream(MAV_DATA_STREAM_EXTRA3, 1, 1);
 	}
@@ -45,6 +47,7 @@ void Mavlink::update(void) {
 	if(tnow > last_master_recv_ms + LINK_TIMEOUT_MS) {
 		if(status == STATUS_CONNECTED)
 			status = STATUS_CONNECTION_LOST;
+			master_time_offset = 0;
 		return;
 	}
 
@@ -199,6 +202,8 @@ void Mavlink::send_distance_sensor(uint16_t distance_cm, uint16_t distance_cm_fi
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 
+	uint32_t master_time = millis() + master_time_offset;
+
 	mavlink_msg_distance_sensor_pack(_sysid, _compid, &msg,
 			master_time, 30, distance_cm_filt, distance_cm, MAV_DISTANCE_SENSOR_ULTRASOUND, 1, MAV_SENSOR_ROTATION_PITCH_90, 0);
 
@@ -319,7 +324,8 @@ void Mavlink::comm_receive() {
 				mavlink_system_time_t in;
 				mavlink_msg_system_time_decode(&msg, &in);
 
-				master_time = in.time_boot_ms;
+				uint32_t master_time = in.time_boot_ms;
+				master_time_offset = master_time - millis();
 
 				// Send request to stop all streams from pixhawk
 				send_request_data_stream(MAV_DATA_STREAM_ALL, 0, 0);

@@ -38,13 +38,14 @@ class Mavlink {
     conn_status_t status;
 
   private: 
-    uint32_t master_time;
+    int32_t master_time_offset;
     uint32_t last_master_recv_ms;
     uint8_t _sysid;
     uint8_t _compid;
     Stream *_port;
     uint8_t _channel;
     uint32_t last_master_time_request_ms;
+    uint32_t last_master_time_sync_ms;
 
 };
 
