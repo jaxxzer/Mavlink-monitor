@@ -57,6 +57,7 @@ void Monitor::init() {
 	rangefinder.init_params(&params);
 	waterdetector.init_params(&params);
 	notify.init(&params);
+	bme.init_params(&params);
 	dipswitch.init();
 	button.init();
 

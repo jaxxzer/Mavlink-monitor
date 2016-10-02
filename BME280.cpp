@@ -75,7 +75,15 @@ void BME280::init() {
 	}
 	Wire.scl_pin = 14;
 	Wire.sda_pin = 13;
-	Wire.begin(BME280_ADDRESS);
+	Wire.begin();
+
+	Wire.beginTransmission(BME280_ADDRESS);
+	bool error = Wire.endTransmission(); // returns 0 if no ack received
+	if(error) {
+		BME_ENABLE = false;
+		return;
+	}
+
 	set_mode(BME280_OVERSAMPLE_16, BME280_OVERSAMPLE_16, BME280_OVERSAMPLE_16, BME280_MODE_NORMAL);
 	read_calibration();
 #if DEBUG_BME280
