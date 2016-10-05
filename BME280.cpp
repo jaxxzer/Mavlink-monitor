@@ -107,6 +107,7 @@ void BME280::update() {
 
 	read_adcs();
 
+	// compensated measurement calculations, cribbed from datasheet
 	temperature = calculate_temperature(adc_T)/100.0f;
 	pressure = calculate_pressure(adc_P)/256.0f;
 	humidity = calculate_humidity(adc_H) / 1024.0f;

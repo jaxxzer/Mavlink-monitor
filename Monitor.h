@@ -4,7 +4,7 @@
 #define RANGEFINDER_MICRON 0
 #define RANGEFINDER_PING 1
 
-#define RANGEFINDER_TYPE RANGEFINDER_PING
+#define RANGEFINDER_TYPE RANGEFINDER_MICRON
 
 #include <Arduino.h>
 #include "MapleMini.h"

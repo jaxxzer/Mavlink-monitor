@@ -16,9 +16,9 @@ void BatteryMonitor::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
 		params->add("V_SCALE", &V_SCALE, 0, 100, 8.7);
-		params->add("C_SCALE", &C_SCALE, 0, 100, 10);
-		params->add("V_OFFSET", &V_OFFSET, 0, 100, 0);
-		params->add("C_OFFSET", &C_OFFSET, 0, 100, 0);
+		params->add("C_SCALE", &C_SCALE, 0, 100, 16.443);
+		params->add("V_OFFSET", &V_OFFSET, -1000, 1000, 0);
+		params->add("C_OFFSET", &C_OFFSET, -1000, 1000, 0); // offset in mA
 		params->add("V_LPFCUT", &V_LPFCUT, 0.001, 100, 0.2);
 		params->add("C_LPFCUT", &C_LPFCUT, 0.001, 100, 0.2);
 	}
@@ -45,7 +45,9 @@ void BatteryMonitor::update() {
 		current_filt.set_cutoff_frequency(C_LPFCUT);
 	}
 
+	// voltage in mV
 	voltage = measure_voltage();
+	// current in mA
 	current = measure_current();
 
 	voltage_filt.apply(voltage, (tnow - _last_update_ms) / 1000.0f);

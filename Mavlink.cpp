@@ -119,8 +119,8 @@ void Mavlink::send_system_status(uint16_t looptime) {
 			sensors_enabled,
 			sensors_health,
 			looptime,
-			monitor.battery.voltage_filt.get(),
-			monitor.battery.current_filt.get(),
+			monitor.battery.voltage_filt.get(), // voltage in millivolts
+			monitor.battery.current_filt.get() / 10.0f, // current in centiAmps
 			monitor.battery.remaining(),
 			0, 0,
 			monitor.bme.humidity * 100.0f,
