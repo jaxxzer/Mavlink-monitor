@@ -326,10 +326,39 @@ void Mavlink::comm_receive() {
 
 				uint32_t master_time = in.time_boot_ms;
 				master_time_offset = master_time - millis();
-
+			}
+			// EXTRA1
+			case MAVLINK_MSG_ID_ATTITUDE:
+			case MAVLINK_MSG_ID_AHRS2:
+			case MAVLINK_MSG_ID_AHRS3:
+			// EXTRA2
+			case MAVLINK_MSG_ID_VFR_HUD:
+			// EXTRA3
+			case MAVLINK_MSG_ID_VIBRATION:
+			case MAVLINK_MSG_ID_EKF_STATUS_REPORT:
+			case MAVLINK_MSG_ID_RANGEFINDER:
+			case MAVLINK_MSG_ID_HWSTATUS:
+			case MAVLINK_MSG_ID_AHRS:
+			// EXT_STAT
+			case MAVLINK_MSG_ID_SYS_STATUS:
+			case MAVLINK_MSG_ID_MEMINFO:
+			case MAVLINK_MSG_ID_MISSION_CURRENT:
+			case MAVLINK_MSG_ID_GPS_RAW_INT:
+			case MAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT:
+			case MAVLINK_MSG_ID_LIMITS_STATUS:
+			// POSITION
+			case MAVLINK_MSG_ID_GLOBAL_POSITION_INT:
+			// RAW_SENS
+			case MAVLINK_MSG_ID_SCALED_PRESSURE2:
+			case MAVLINK_MSG_ID_SCALED_IMU2:
+			case MAVLINK_MSG_ID_SCALED_PRESSURE:
+			case MAVLINK_MSG_ID_RAW_IMU:
+			// RC_CHAN:
+			case MAVLINK_MSG_ID_SERVO_OUTPUT_RAW:
+			case MAVLINK_MSG_ID_RC_CHANNELS_RAW:
 				// Send request to stop all streams from pixhawk
 				send_request_data_stream(MAV_DATA_STREAM_ALL, 0, 0);
-			} break;
+				break;
 
 			case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
 				send_params();
