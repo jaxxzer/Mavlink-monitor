@@ -35,6 +35,4 @@
 #define PIN_WATERDETECTOR PIN_ADC_0
 #define PIN_TEMPSENSOR PIN_ADC_1
 
-
-
 #endif
