@@ -42,12 +42,12 @@ void Monitor::init() {
 	Serial3.begin(115200); //rs232
 	//delay(5000);
 
-	params.add("SRATE1", &SRATE1, 0, 50, 10);
-	params.add("SRATE2", &SRATE2, 0, 50, 10);
+	params.addUint32("SRATE1", &SRATE1, 0l, 50ul, 10ul);
+	params.addUint32("SRATE2", &SRATE2, 0ul, 50ul, 10ul);
 //	params.add("BAUD_PIX", &BAUD_PIX);
 //	params.add("BAUD_ESP", &BAUD_ESP);
 //	params.add("BAUD_232", &BAUD_232);
-	params.add("PIC_INTERVAL", &PIC_INTERVAL, 0, 50000, 5000);
+	params.addUint32("PIC_INTERVAL", &PIC_INTERVAL, 0, 50000, 5000);
 //  params.add("DEBUG_LEVEL", &DEBUG_LEVEL);
 
 	pixhawk.init_params(&params);
