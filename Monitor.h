@@ -54,6 +54,7 @@ public:
 	uint32_t BAUD_ESP;
 	uint32_t BAUD_232;
 	uint32_t PIC_INTERVAL;
+	uint8_t TEST;
 
 private:
 	///////////////////////////

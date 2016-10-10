@@ -48,7 +48,7 @@ void Monitor::init() {
 //	params.add("BAUD_ESP", &BAUD_ESP);
 //	params.add("BAUD_232", &BAUD_232);
 	params.addUint32("PIC_INTERVAL", &PIC_INTERVAL, 0, 50000, 5000);
-//  params.add("DEBUG_LEVEL", &DEBUG_LEVEL);
+	params.addUint8("test", &TEST, 4, 255, 128);
 
 	pixhawk.init_params(&params);
 	esp.init_params(&params);

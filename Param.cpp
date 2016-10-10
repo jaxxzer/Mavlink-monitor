@@ -6,57 +6,39 @@ _n(0)
 	memset(_params, 0, sizeof(_params));
 }
 
-
-param_t* Parameters::add(char* id, float* var, float min, float max, float def)
-{
-	if(_n >= MAX_PARAMS) {
-		return NULL;
-	}
-
-	strncpy(_params[_n].id, id, PARAM_NAME_MAX);
-	_params[_n].id[PARAM_NAME_MAX] = 0; // add null terminator
-	_params[_n].type = MAV_PARAM_TYPE_REAL32;
-	_params[_n].address = _n * sizeof(float);
-	_params[_n].index = _n;
-	_params[_n].min = min;
-	_params[_n].max = max;
-	_params[_n].value = var;
-	_params[_n].def = def;
-
-	return &_params[_n++];
-}
-
-param_t* Parameters::add(char* id, uint32_t* var, uint32_t min, uint32_t max, uint32_t def)
-{
-	if(_n >= MAX_PARAMS) {
-		return NULL;
-	}
-
-	strncpy(_params[_n].id, id, PARAM_NAME_MAX);
-	_params[_n].id[PARAM_NAME_MAX] = 0; // add null terminator
-	_params[_n].type = MAV_PARAM_TYPE_UINT32;
-	_params[_n].address = _n * sizeof(float);
-	_params[_n].index = _n;
-	_params[_n].min = min;
-	_params[_n].max = max;
-	_params[_n].value = (float*)var;
-	_params[_n].def = def;
-
-	return &_params[_n++];
-}
-
 void Parameters::load_all()
 {
 	for(int i = 0; i < _n; i++) {
 		EEPROM_readAnything(_params[i].address, *_params[i].value);
 		
 		if(!constrain_param(i)) {
-			if(_params[i].type == MAV_PARAM_TYPE_UINT32) {
-				uint32_t def = (uint32_t)_params[i].def;
-				*(_params[i].value) = *(float*)&def;
-			} else {
-				*(_params[i].value) = _params[i].def;
+
+			switch(_params[i].type) {
+			case MAV_PARAM_TYPE_INT8:
+				set_default<int8_t>(i);
+				break;
+			case MAV_PARAM_TYPE_INT16:
+				set_default<int16_t>(i);
+				break;
+			case MAV_PARAM_TYPE_INT32:
+				set_default<int32_t>(i);
+				break;
+			case MAV_PARAM_TYPE_UINT8:
+				set_default<uint8_t>(i);
+				break;
+			case MAV_PARAM_TYPE_UINT16:
+				set_default<uint16_t>(i);
+				break;
+			case MAV_PARAM_TYPE_UINT32:
+				set_default<uint32_t>(i);
+				break;
+			case MAV_PARAM_TYPE_REAL32:
+				set_default<float>(i);
+				break;
+			default:
+				break;
 			}
+
 			constrain_param(i); // Sanity check
 		}
 

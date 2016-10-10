@@ -26,7 +26,7 @@ _update_interval_ms(50) // 20Hz
 void WaterDetector::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
-		params->add("W_ENABLE", &W_ENABLE, 0, 1, 1);
+		params->addUint32("W_ENABLE", &W_ENABLE, 0, 1, 1);
 	}
 }
 

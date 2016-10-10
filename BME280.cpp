@@ -65,7 +65,7 @@ update_interval_ms(50)
 void BME280::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
-		params->add("BME_ENABLE", &BME_ENABLE, 0, 1, 0);
+		params->addUint32("BME_ENABLE", &BME_ENABLE, 0, 1, 0);
 	}
 }
 

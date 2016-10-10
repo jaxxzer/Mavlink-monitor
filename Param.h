@@ -45,11 +45,12 @@ public:
 
 	template <typename T, MAV_PARAM_TYPE PT>
 	param_t* add(char* id, T* var, T min, T max, T def);
-	param_t* add(char* id, float* var, float min, float max, float def);
-	param_t* add(char* id, uint32_t* var, uint32_t min, uint32_t max, uint32_t def);
 
 	param_t* addFloat(char* id, float* var, float min, float max, float def) {
 		return add<float, MAV_PARAM_TYPE_REAL32>(id, var, min, max, def);
+	};
+	param_t* addInt32(char* id, int32_t* var, int32_t min, int32_t max, int32_t def) {
+		return add<int32_t, MAV_PARAM_TYPE_INT32>(id, var, min, max, def);
 	};
 	param_t* addUint32(char* id, uint32_t* var, uint32_t min, uint32_t max, uint32_t def) {
 		return add<uint32_t, MAV_PARAM_TYPE_UINT32>(id, var, min, max, def);
@@ -57,8 +58,14 @@ public:
 	param_t* addInt16(char* id, int16_t* var, int16_t min, int16_t max, int16_t def) {
 		return add<int16_t, MAV_PARAM_TYPE_INT16>(id, var, min, max, def);
 	};
+	param_t* addUint16(char* id, uint16_t* var, uint16_t min, uint16_t max, uint16_t def) {
+		return add<uint16_t, MAV_PARAM_TYPE_UINT16>(id, var, min, max, def);
+	};
 	param_t* addInt8(char* id, int8_t* var, int8_t min, int8_t max, int8_t def) {
 		return add<int8_t, MAV_PARAM_TYPE_INT8>(id, var, min, max, def);
+	};
+	param_t* addUint8(char* id, uint8_t* var, uint8_t min, uint8_t max, uint8_t def) {
+		return add<uint8_t, MAV_PARAM_TYPE_UINT8>(id, var, min, max, def);
 	};
 
 	void load_all(void);
@@ -69,9 +76,14 @@ public:
 	param_t* find(char *id);
 	param_t* get(uint8_t index);
 	param_t* set(char* id, float value);
+
 	bool constrain_param(uint8_t index);
+
 	template <typename T>
 	bool constrain_t(uint8_t index);
+
+	template <typename T>
+	void set_default(uint8_t index);
 
 	uint8_t num_params(void) const { return _n; };
 
@@ -116,6 +128,12 @@ bool Parameters::constrain_t(uint8_t index) {
 		return false;
 	}
 	return true;
+}
+
+template <typename T>
+void Parameters::set_default(uint8_t index) {
+	T def = (T)_params[index].def;
+	*(_params[index].value) = *(float*)&def;
 }
 
 #endif
