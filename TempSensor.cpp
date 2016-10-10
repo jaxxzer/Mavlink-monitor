@@ -13,10 +13,10 @@ _update_interval_ms(100)
 void TempSensor::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
-		params->addUint32("T_ENABLE", &T_ENABLE, 0, 1, 1);
+		params->addUint8("T_ENABLE", &T_ENABLE, 0, 1, 1);
 		params->addFloat("T_SCALE", &T_SCALE, 0, 100, 10);
 		params->addFloat("T_OFFSET", &T_OFFSET, -10000, 10000, -5000); // Temperature offset in centidegrees C
-		params->addUint32("T_LIMIT", &T_LIMIT, 0, 10000, 5000);
+		params->addUint16("T_LIMIT", &T_LIMIT, 0, 10000, 5000);
 	}
 }
 

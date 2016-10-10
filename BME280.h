@@ -11,7 +11,7 @@ public:
 
 	// Parameters
 	Parameters *params;
-	uint32_t BME_ENABLE;
+	uint8_t BME_ENABLE;
 
 	void print_calibration();
 	void print_state();

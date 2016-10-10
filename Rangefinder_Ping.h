@@ -20,9 +20,9 @@ public:
 	void update(void);
 
 	Parameters *params;
-	uint32_t PINGRATE;
-	uint32_t RANGE_ENABLE;
-	uint32_t LPF_ENABLE;
+	uint8_t PINGRATE;
+	uint8_t RANGE_ENABLE;
+	uint8_t LPF_ENABLE;
 	float LPF_CUTOFF;
 
 	uint16_t range;

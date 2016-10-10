@@ -12,11 +12,6 @@ last10Hz(400),
 last50Hz(500),
 lastS1(600),
 lastS2(700),
-SRATE1(0),
-SRATE2(0),
-BAUD_PIX(0),
-BAUD_ESP(0),
-BAUD_232(0),
 loopcounter(0),
 totaltime(0),
 
@@ -42,13 +37,9 @@ void Monitor::init() {
 	Serial3.begin(115200); //rs232
 	//delay(5000);
 
-	params.addUint32("SRATE1", &SRATE1, 0l, 50ul, 10ul);
-	params.addUint32("SRATE2", &SRATE2, 0ul, 50ul, 10ul);
-//	params.add("BAUD_PIX", &BAUD_PIX);
-//	params.add("BAUD_ESP", &BAUD_ESP);
-//	params.add("BAUD_232", &BAUD_232);
+	params.addUint8("SRATE1", &SRATE1, 0, 50, 10);
+	params.addUint8("SRATE2", &SRATE2, 0, 50, 10);
 	params.addUint32("PIC_INTERVAL", &PIC_INTERVAL, 0, 50000, 5000);
-	params.addUint8("test", &TEST, 4, 255, 128);
 
 	pixhawk.init_params(&params);
 	esp.init_params(&params);

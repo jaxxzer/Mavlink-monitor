@@ -17,8 +17,8 @@ public:
 	Parameters *params;
 	float T_SCALE; // Scalar, mV per degrees C
 	float T_OFFSET; // Voltage offset to be applied to temperature readings
-	uint32_t T_ENABLE;
-	uint32_t T_LIMIT;
+	uint8_t T_ENABLE;
+	uint16_t T_LIMIT;
 
 	// Temperature in degrees C
 	uint16_t temperature;

@@ -48,11 +48,8 @@ public:
 	///////PARAMETERS//////////
 	///////////////////////////
 
-	uint32_t SRATE1;
-	uint32_t SRATE2;
-	uint32_t BAUD_PIX;
-	uint32_t BAUD_ESP;
-	uint32_t BAUD_232;
+	uint8_t SRATE1;
+	uint8_t SRATE2;
 	uint32_t PIC_INTERVAL;
 	uint8_t TEST;
 

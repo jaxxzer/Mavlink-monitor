@@ -34,9 +34,9 @@ Rangefinder_Ping::Rangefinder_Ping() :
 void Rangefinder_Ping::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
-		params->addUint32("PINGRATE", &PINGRATE, 0, 50, 10);
-		params->addUint32("RANGE_ENABLE", &RANGE_ENABLE, 0, 1, 0);
-		params->addUint32("LPF_ENABLE", &LPF_ENABLE, 0, 1, 0);
+		params->addUint8("PINGRATE", &PINGRATE, 0, 50, 10);
+		params->addUint8("RANGE_ENABLE", &RANGE_ENABLE, 0, 1, 0);
+		params->addUint8("LPF_ENABLE", &LPF_ENABLE, 0, 1, 0);
 		params->addFloat("LPF_CUTOFF", &LPF_CUTOFF, 0.001, 100, 1);
 	}
 
