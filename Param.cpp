@@ -160,47 +160,29 @@ bool Parameters::constrain_param(uint8_t index)	{
 	if(index < 0 || index > _n-1) {
 		return false; // out of range
 	}
-
-//	Serial.print("CONSTRAIN: ");
-//	Serial.print(index);
-//	Serial.print("\t Value: ");
-	if(_params[index].type == MAV_PARAM_TYPE_UINT32) {
-		//Serial.println(*((uint32_t*)_params[index].value));
-		if(*((uint32_t*)_params[index].value) < _params[index].min) {
-
-			uint32_t min = (uint32_t)_params[index].min;
-			*(_params[index].value) = *(float*)&min;
-			return false;
-
-			//			Serial.println("Param value under min!");
-//			Serial.print("Param should now be: ");
-//			Serial.println(min);
-
-		} else if(*((uint32_t*)_params[index].value) > _params[index].max) {
-
-			uint32_t max = (uint32_t)_params[index].max;
-			*(_params[index].value) = *(float*)&max;
-			return false;
-
-			//			Serial.println("Param value exceeds max!");
-//			Serial.print("Param should now be: ");
-//			Serial.println(max);
-		}
-	}else {
-//		Serial.println(*(_params[index].value));
-		if(isnan(*(_params[index].value)) || isinf(*(_params[index].value))) {
-			return false;
-		}
-		if(*(_params[index].value) < _params[index].min) {
-			*(_params[index].value) = _params[index].min;
-			return false;
-		} else if(*(_params[index].value) > _params[index].max) {
-			*(_params[index].value) = _params[index].max;
-			return false;
-		}
+	switch(_params[index].type) {
+	case MAV_PARAM_TYPE_INT8:
+		return constrain_t<int8_t>(index);
+		break;
+	case MAV_PARAM_TYPE_INT16:
+		return constrain_t<int16_t>(index);
+		break;
+	case MAV_PARAM_TYPE_INT32:
+		return constrain_t<int32_t>(index);
+		break;
+	case MAV_PARAM_TYPE_UINT8:
+		return constrain_t<uint8_t>(index);
+		break;
+	case MAV_PARAM_TYPE_UINT16:
+		return constrain_t<uint16_t>(index);
+		break;
+	case MAV_PARAM_TYPE_UINT32:
+		return constrain_t<uint32_t>(index);
+		break;
+	case MAV_PARAM_TYPE_REAL32:
+		return constrain_t<float>(index);
+		break;
+	default:
+		return false;
 	}
-
-	return true; // The parameter value was already in the correct range
-
 }
-

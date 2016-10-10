@@ -57,6 +57,9 @@ public:
 	param_t* addInt16(char* id, int16_t* var, int16_t min, int16_t max, int16_t def) {
 		return add<int16_t, MAV_PARAM_TYPE_INT16>(id, var, min, max, def);
 	};
+	param_t* addInt8(char* id, int8_t* var, int8_t min, int8_t max, int8_t def) {
+		return add<int8_t, MAV_PARAM_TYPE_INT8>(id, var, min, max, def);
+	};
 
 	void load_all(void);
 
@@ -67,6 +70,8 @@ public:
 	param_t* get(uint8_t index);
 	param_t* set(char* id, float value);
 	bool constrain_param(uint8_t index);
+	template <typename T>
+	bool constrain_t(uint8_t index);
 
 	uint8_t num_params(void) const { return _n; };
 
@@ -89,12 +94,28 @@ param_t* Parameters::add(char* id, T* var, T min, T max, T def)
 	_params[_n].type = PT;
 	_params[_n].address = _n * sizeof(float);
 	_params[_n].index = _n;
-	_params[_n].min = min;
-	_params[_n].max = max;
+	_params[_n].min = (float)min;
+	_params[_n].max = (float)max;
 	_params[_n].value = (float*)var;
 	_params[_n].def = def;
 
 	return &_params[_n++];
+}
+
+template <typename T>
+bool Parameters::constrain_t(uint8_t index) {
+	if(isnan(*(_params[index].value)) || isinf(*(_params[index].value))) {
+		return false;
+	} else if(*(T*)_params[index].value < (T)_params[index].min) {
+		T min = (T)_params[index].min;
+		*(_params[index].value) = *(float*)&min;
+		return false;
+	} else if(*(T*)_params[index].value > (T)_params[index].max) {
+		T max = (T)_params[index].max;
+		*(_params[index].value) = *(float*)&max;
+		return false;
+	}
+	return true;
 }
 
 #endif
