@@ -110,9 +110,9 @@ void Mavlink::send_system_status(uint16_t looptime) {
 	uint32_t sensors_health = 0;
 	sensors_health |= !monitor.waterdetector.detected * MAV_SENSOR_WATER;
 	sensors_health |= ((monitor.tempsensor.temperature < monitor.tempsensor.T_LIMIT) &&
-			(monitor.bme.temperature < monitor.tempsensor.T_LIMIT)) * MAV_SENSOR_TEMP;
+			(monitor.bme.temperature * 100.0f < monitor.tempsensor.T_LIMIT)) * MAV_SENSOR_TEMP;
 	sensors_health |= (monitor.bme.humidity < 80) * MAV_SENSOR_HUMIDITY;
-	sensors_health |= (monitor.bme.pressure < 105000) * MAV_SENSOR_PRESSURE;
+	sensors_health |= (monitor.bme.pressure < 104000) * MAV_SENSOR_PRESSURE;
 
 	mavlink_msg_sys_status_pack(_sysid, _compid, &msg,
 			sensors_present,
