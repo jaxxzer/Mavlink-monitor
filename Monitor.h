@@ -44,6 +44,8 @@ public:
 	void run(void);
 	void init(void);
 
+	void reboot(void);
+
 	///////////////////////////
 	///////PARAMETERS//////////
 	///////////////////////////
@@ -51,7 +53,8 @@ public:
 	uint8_t SRATE1;
 	uint8_t SRATE2;
 	uint32_t PIC_INTERVAL;
-	uint8_t TEST;
+	uint8_t REBOOT_NOW;
+	uint8_t VEHICLEID;
 
 private:
 	///////////////////////////

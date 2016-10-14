@@ -40,6 +40,8 @@ void Monitor::init() {
 	params.addUint8("SRATE1", &SRATE1, 0, 50, 10);
 	params.addUint8("SRATE2", &SRATE2, 0, 50, 10);
 	params.addUint32("PIC_INTERVAL", &PIC_INTERVAL, 0, 50000, 5000);
+	params.addUint8("REBOOT_NOW", &REBOOT_NOW, 0, 1, 0);
+	params.addUint8("VEHICLEID", &VEHICLEID, 0, 255, 111);
 
 	pixhawk.init_params(&params);
 	esp.init_params(&params);
@@ -54,6 +56,8 @@ void Monitor::init() {
 
 	params.load_all(); // must not be called until all parameters have been added
 
+	REBOOT_NOW = 0;
+
 	tempsensor.init();
 	battery.init();
 	rangefinder.init();
@@ -63,6 +67,7 @@ void Monitor::init() {
 	// Set mavlink sysid according to dipswitch state
 	// id 0 is broadcast, id 1 is pixhawk itself, we can be (0~7) + 2 = 2~9
 	pixhawk._sysid = (dipswitch.get_state() & 0b00000111) + 2;
+	VEHICLEID = pixhawk._sysid;
 	esp._sysid = (dipswitch.get_state() & 0b00000111) + 2;
 
 	// dipswitch pole #3 (zero indexed) determines output of main mavlink
@@ -92,6 +97,9 @@ void Monitor::init() {
 }
 
 void Monitor::run() {
+	if(REBOOT_NOW) {
+		reboot();
+	}
 	uint32_t tnow = millis();
 	uint32_t tnow_us = micros();
 	uint32_t looptime = tnow_us - last_us;
@@ -175,4 +183,8 @@ void Monitor::run() {
 	}
 }
 
+void Monitor::reboot() {
+	pixhawk.send_text("Going for reboot now!");
+	nvic_sys_reset();
+}
 
