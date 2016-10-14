@@ -131,7 +131,9 @@ void Monitor::run() {
 	// 10 second loop
 	if(tnow - last10s > 1000 * 10) {
 		last10s = tnow;
-		esp.send_nav_cmd_do_trigger_control(PIC_INTERVAL);
+		if(PIC_INTERVAL > 0) {
+			esp.send_nav_cmd_do_trigger_control(PIC_INTERVAL);
+		}
 	}
 	// 5 second loop
 	if(tnow - last5s > 1000 * 5) {
