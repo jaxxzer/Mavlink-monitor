@@ -44,27 +44,27 @@ public:
 	Parameters();
 
 	template <typename T, MAV_PARAM_TYPE PT>
-	param_t* add(char* id, T* var, T min, T max, T def);
+	param_t* add(const char* id, T* var, T min, T max, T def);
 
-	param_t* addFloat(char* id, float* var, float min, float max, float def) {
+	param_t* addFloat(const char* id, float* var, float min, float max, float def) {
 		return add<float, MAV_PARAM_TYPE_REAL32>(id, var, min, max, def);
 	};
-	param_t* addInt32(char* id, int32_t* var, int32_t min, int32_t max, int32_t def) {
+	param_t* addInt32(const char* id, int32_t* var, int32_t min, int32_t max, int32_t def) {
 		return add<int32_t, MAV_PARAM_TYPE_INT32>(id, var, min, max, def);
 	};
-	param_t* addUint32(char* id, uint32_t* var, uint32_t min, uint32_t max, uint32_t def) {
+	param_t* addUint32(const char* id, uint32_t* var, uint32_t min, uint32_t max, uint32_t def) {
 		return add<uint32_t, MAV_PARAM_TYPE_UINT32>(id, var, min, max, def);
 	};
-	param_t* addInt16(char* id, int16_t* var, int16_t min, int16_t max, int16_t def) {
+	param_t* addInt16(const char* id, int16_t* var, int16_t min, int16_t max, int16_t def) {
 		return add<int16_t, MAV_PARAM_TYPE_INT16>(id, var, min, max, def);
 	};
-	param_t* addUint16(char* id, uint16_t* var, uint16_t min, uint16_t max, uint16_t def) {
+	param_t* addUint16(const char* id, uint16_t* var, uint16_t min, uint16_t max, uint16_t def) {
 		return add<uint16_t, MAV_PARAM_TYPE_UINT16>(id, var, min, max, def);
 	};
-	param_t* addInt8(char* id, int8_t* var, int8_t min, int8_t max, int8_t def) {
+	param_t* addInt8(const char* id, int8_t* var, int8_t min, int8_t max, int8_t def) {
 		return add<int8_t, MAV_PARAM_TYPE_INT8>(id, var, min, max, def);
 	};
-	param_t* addUint8(char* id, uint8_t* var, uint8_t min, uint8_t max, uint8_t def) {
+	param_t* addUint8(const char* id, uint8_t* var, uint8_t min, uint8_t max, uint8_t def) {
 		return add<uint8_t, MAV_PARAM_TYPE_UINT8>(id, var, min, max, def);
 	};
 
@@ -95,7 +95,7 @@ private:
 };
 
 template <typename T, MAV_PARAM_TYPE PT>
-param_t* Parameters::add(char* id, T* var, T min, T max, T def)
+param_t* Parameters::add(const char* id, T* var, T min, T max, T def)
 {
 	if(_n >= MAX_PARAMS) {
 		return NULL;

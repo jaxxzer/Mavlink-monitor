@@ -167,7 +167,7 @@ void Mavlink::send_param(uint8_t index) {
 	_port->write(buf, len);
 }
 
-void Mavlink::send_text(char* text) {
+void Mavlink::send_text(const char* text) {
 
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];

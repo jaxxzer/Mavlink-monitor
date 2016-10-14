@@ -19,7 +19,7 @@ class Mavlink {
     void send_system_status(uint16_t looptime);
     void send_params(void);
     void send_param(uint8_t index);
-    void send_text(char* text);
+    void send_text(const char* text);
     void send_battery_status(void);
     void send_power_status(void);
     void send_distance_sensor(uint16_t distance_cm, uint16_t distance_cm_filt);
