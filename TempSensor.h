@@ -2,6 +2,7 @@
 #define TEMPSENSOR_H
 #include <Arduino.h>
 #include "Param.h"
+#include "LowPassFilter.h"
 
 class TempSensor {
 public:
@@ -19,9 +20,13 @@ public:
 	float T_OFFSET; // Voltage offset to be applied to temperature readings
 	uint8_t T_ENABLE;
 	uint16_t T_LIMIT;
+	float T_CUTOFF;
+	uint8_t T_LPF_ENABLE;
 
 	// Temperature in degrees C
 	uint16_t temperature;
+
+	LowPassFilterFloat temperature_filt;
 
 private:
 	uint32_t _last_update_ms;

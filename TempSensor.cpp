@@ -17,6 +17,8 @@ void TempSensor::init_params(Parameters *_params) {
 		params->addFloat("T_SCALE", &T_SCALE, 0, 100, 10);
 		params->addFloat("T_OFFSET", &T_OFFSET, -10000, 10000, -5000); // Temperature offset in centidegrees C
 		params->addUint16("T_LIMIT", &T_LIMIT, 0, 10000, 5000);
+		params->addFloat("T_CUTOFF", &T_CUTOFF, 0.001, 100, 1);
+		params->addUint8("T_LPF_ENABLE", &T_LPF_ENABLE, 0, 1, 1);
 	}
 }
 
@@ -37,8 +39,6 @@ void TempSensor::update() {
 		return;
 	}
 
-	_last_update_ms = tnow;
-
 	float voltage = (analogRead(PIN_TEMPSENSOR) * ADC_VOLTAGE_SCALAR);
 
 	// 10mV/degree C
@@ -47,6 +47,14 @@ void TempSensor::update() {
 	//	operates to 125°C from a single 2.7 V supply.
 	// temperature reading in centidegrees C
 	temperature = (voltage * 1000) * T_SCALE + T_OFFSET;
+	if(T_LPF_ENABLE) {
+		if(temperature_filt.get_cutoff_freq() != T_CUTOFF) {
+			temperature_filt.set_cutoff_frequency(T_CUTOFF);
+		}
+		temperature_filt.apply(temperature, (tnow - _last_update_ms)/1000.0f);
+	}
+
+	_last_update_ms = tnow;
 
 #if TEMPSENSOR_DEBUG
 	Serial.println(temperature);
