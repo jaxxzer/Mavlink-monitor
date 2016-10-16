@@ -37,11 +37,11 @@ void Monitor::init() {
 	Serial3.begin(115200); //rs232
 	//delay(5000);
 
-	params.addUint8("SRATE1", &SRATE1, 0, 50, 10);
-	params.addUint8("SRATE2", &SRATE2, 0, 50, 10);
-	params.addUint32("PIC_INTERVAL", &PIC_INTERVAL, 0, 50000, 5000);
-	params.addUint8("REBOOT_NOW", &REBOOT_NOW, 0, 1, 0);
-	params.addUint8("VEHICLEID", &VEHICLEID, 0, 255, 111);
+	params.addUint8(param_srate1, "SRATE1", &SRATE1, 0, 50, 10);
+	params.addUint8(param_srate2, "SRATE2", &SRATE2, 0, 50, 10);
+	params.addUint32(param_pic_interval, "PIC_INTERVAL", &PIC_INTERVAL, 0, 50000, 5000);
+	params.addUint8(param_reboot_now, "REBOOT_NOW", &REBOOT_NOW, 0, 1, 0);
+	params.addUint8(param_vehicleid, "VEHICLEID", &VEHICLEID, 0, 255, 111);
 
 	pixhawk.init_params(&params);
 	esp.init_params(&params);

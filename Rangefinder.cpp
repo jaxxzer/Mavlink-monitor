@@ -19,10 +19,10 @@ out_of_range_flag(true)
 void Rangefinder::init_params(Parameters *_params) {
 	params = _params;
 	if(params != NULL) {
-		params->addUint8("PINGRATE", &PINGRATE, 0, 20, 7);
-		params->addUint8("RANGE_ENABLE", &RANGE_ENABLE, 0, 1, 0);
-		params->addUint8("LPF_ENABLE", &LPF_ENABLE, 0, 1, 0);
-		params->addFloat("LPF_CUTOFF", &LPF_CUTOFF, 0.001, 100, 1);
+		params->addUint8(param_pingrate, "PINGRATE", &PINGRATE, 0, 20, 7);
+		params->addUint8(param_range_enable, "RANGE_ENABLE", &RANGE_ENABLE, 0, 1, 0);
+		params->addUint8(param_lpf_enable, "LPF_ENABLE", &LPF_ENABLE, 0, 1, 0);
+		params->addFloat(param_lpf_cutoff, "LPF_CUTOFF", &LPF_CUTOFF, 0.001, 100, 1);
 	}
 }
 

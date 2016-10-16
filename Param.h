@@ -39,33 +39,68 @@ typedef struct {
 	float				def;
 } param_t;
 
+enum {
+	//Monitor
+	param_srate1,
+	param_srate2,
+	param_pic_interval,
+	param_reboot_now = 3,
+	param_vehicleid,
+
+	//BattMonitor
+	param_v_scale,
+	param_c_scale,
+	param_v_offset,
+	param_c_offset,
+	param_v_lpfcut,
+	param_c_lpfcut,
+
+	//Tempsensor
+	param_t_enable,
+	param_t_scale,
+	param_t_offset,
+	param_t_limit,
+	param_t_cutoff,
+	param_t_lpf_enable,
+
+	//Rangefinder
+	param_pingrate,
+	param_range_enable,
+	param_lpf_enable,
+	param_lpf_cutoff,
+
+	param_w_enable,
+
+	param_bme_enable
+};
+
 class Parameters {
 public:
 	Parameters();
 
 	template <typename T, MAV_PARAM_TYPE PT>
-	param_t* add(const char* id, T* var, T min, T max, T def);
+	param_t* add(uint8_t param, const char* id, T* var, T min, T max, T def);
 
-	param_t* addFloat(const char* id, float* var, float min, float max, float def) {
-		return add<float, MAV_PARAM_TYPE_REAL32>(id, var, min, max, def);
+	param_t* addFloat(uint8_t param, const char* id, float* var, float min, float max, float def) {
+		return add<float, MAV_PARAM_TYPE_REAL32>(param, id, var, min, max, def);
 	};
-	param_t* addInt32(const char* id, int32_t* var, int32_t min, int32_t max, int32_t def) {
-		return add<int32_t, MAV_PARAM_TYPE_INT32>(id, var, min, max, def);
+	param_t* addInt32(uint8_t param, const char* id, int32_t* var, int32_t min, int32_t max, int32_t def) {
+		return add<int32_t, MAV_PARAM_TYPE_INT32>(param, id, var, min, max, def);
 	};
-	param_t* addUint32(const char* id, uint32_t* var, uint32_t min, uint32_t max, uint32_t def) {
-		return add<uint32_t, MAV_PARAM_TYPE_UINT32>(id, var, min, max, def);
+	param_t* addUint32(uint8_t param, const char* id, uint32_t* var, uint32_t min, uint32_t max, uint32_t def) {
+		return add<uint32_t, MAV_PARAM_TYPE_UINT32>(param, id, var, min, max, def);
 	};
-	param_t* addInt16(const char* id, int16_t* var, int16_t min, int16_t max, int16_t def) {
-		return add<int16_t, MAV_PARAM_TYPE_INT16>(id, var, min, max, def);
+	param_t* addInt16(uint8_t param, const char* id, int16_t* var, int16_t min, int16_t max, int16_t def) {
+		return add<int16_t, MAV_PARAM_TYPE_INT16>(param, id, var, min, max, def);
 	};
-	param_t* addUint16(const char* id, uint16_t* var, uint16_t min, uint16_t max, uint16_t def) {
-		return add<uint16_t, MAV_PARAM_TYPE_UINT16>(id, var, min, max, def);
+	param_t* addUint16(uint8_t param, const char* id, uint16_t* var, uint16_t min, uint16_t max, uint16_t def) {
+		return add<uint16_t, MAV_PARAM_TYPE_UINT16>(param, id, var, min, max, def);
 	};
-	param_t* addInt8(const char* id, int8_t* var, int8_t min, int8_t max, int8_t def) {
-		return add<int8_t, MAV_PARAM_TYPE_INT8>(id, var, min, max, def);
+	param_t* addInt8(uint8_t param, const char* id, int8_t* var, int8_t min, int8_t max, int8_t def) {
+		return add<int8_t, MAV_PARAM_TYPE_INT8>(param, id, var, min, max, def);
 	};
-	param_t* addUint8(const char* id, uint8_t* var, uint8_t min, uint8_t max, uint8_t def) {
-		return add<uint8_t, MAV_PARAM_TYPE_UINT8>(id, var, min, max, def);
+	param_t* addUint8(uint8_t param, const char* id, uint8_t* var, uint8_t min, uint8_t max, uint8_t def) {
+		return add<uint8_t, MAV_PARAM_TYPE_UINT8>(param, id, var, min, max, def);
 	};
 
 	void load_all(void);
@@ -95,7 +130,7 @@ private:
 };
 
 template <typename T, MAV_PARAM_TYPE PT>
-param_t* Parameters::add(const char* id, T* var, T min, T max, T def)
+param_t* Parameters::add(uint8_t param, const char* id, T* var, T min, T max, T def)
 {
 	if(_n >= MAX_PARAMS) {
 		return NULL;
@@ -104,7 +139,7 @@ param_t* Parameters::add(const char* id, T* var, T min, T max, T def)
 	strncpy(_params[_n].id, id, PARAM_NAME_MAX);
 	_params[_n].id[PARAM_NAME_MAX] = 0; // add null terminator
 	_params[_n].type = PT;
-	_params[_n].address = _n * sizeof(float);
+	_params[_n].address = param * sizeof(float);
 	_params[_n].index = _n;
 	_params[_n].min = (float)min;
 	_params[_n].max = (float)max;
